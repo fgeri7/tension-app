@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tension App</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0c1030">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tension">
+<style>
+  :root{
+    --navy-deep: #0c1030;
+    --navy-mid: #171c46;
+    --navy-glow: #2a2f6e;
+    --gold: #f0b93d;
+    --gold-soft: #f7d478;
+    --purple: #6a2f7d;
+    --orange: #e5711f;
+    --cream: #f4ecd8;
+    --blue-team: #2f6fed;
+    --blue-team-dark: #1c4bb0;
+    --red-team: #d1461f;
+    --red-team-dark: #98300f;
+    --ink: #eef1ff;
+    --muted: #9aa0c9;
+    --good:#3fae5e;
+  }
+  *{box-sizing:border-box;}
+  html{
+    overscroll-behavior: none;
+  }
+  body{
+    margin:0;
+    min-height:100vh;
+    background: radial-gradient(circle at 50% 20%, var(--navy-glow) 0%, var(--navy-mid) 45%, var(--navy-deep) 100%);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    padding: 24px 16px 60px;
+    overscroll-behavior: none;
+  }
+  h1{
+    font-family: Impact, 'Arial Black', sans-serif;
+    text-align:center;
+    letter-spacing: 3px;
+    font-size: clamp(26px, 5vw, 42px);
+    margin: 0 0 4px;
+    background: linear-gradient(180deg, var(--gold-soft), var(--gold) 55%, #a9720c);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 2px 0 rgba(0,0,0,0.35);
+  }
+  .subtitle{ text-align:center; color: var(--muted); font-size: 13px; margin-bottom: 22px; letter-spacing: 0.5px; }
+  .layout{ display:grid; grid-template-columns: minmax(320px, 620px) minmax(280px, 380px); gap: 24px; max-width: 1080px; margin: 0 auto; align-items:start; }
+  @media (max-width: 860px){ .layout{grid-template-columns: 1fr;} }
+  .board-card{ background: linear-gradient(160deg, #11153a, #090c26); border-radius: 20px; padding: 14px; border: 3px solid var(--gold); box-shadow: 0 12px 40px rgba(0,0,0,0.5), inset 0 0 40px rgba(240,185,61,0.06); }
+  svg{display:block; width:100%; height:auto;}
+  .panel{ background: rgba(23,28,70,0.6); border: 1px solid rgba(240,185,61,0.25); border-radius: 16px; padding: 18px; margin-bottom: 18px; backdrop-filter: blur(4px); }
+  .panel h2{ font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-soft); margin: 0 0 12px; font-weight: 700; }
+  .team-row{ display:flex; align-items:center; justify-content:space-between; padding: 8px 10px; border-radius: 10px; margin-bottom: 8px; }
+  .team-row.blue{background: rgba(47,111,237,0.15); border:1px solid rgba(47,111,237,0.4);}
+  .team-row.red{background: rgba(209,70,31,0.15); border:1px solid rgba(209,70,31,0.4);}
+  .team-name{display:flex; align-items:center; gap:8px; font-weight:600;}
+  .dot{width:14px; height:14px; border-radius:50%; display:inline-block;}
+  .dot.blue{background: var(--blue-team);}
+  .dot.red{background: var(--red-team);}
+  .team-pos{font-variant-numeric: tabular-nums; font-size:14px; color: var(--ink);}
+  .turn-banner{ text-align:center; padding: 10px; border-radius: 12px; font-weight: 700; font-size: 15px; margin-bottom: 14px; letter-spacing: 0.3px; }
+  .turn-banner.blue{background: linear-gradient(135deg, var(--blue-team), var(--blue-team-dark)); color:#fff;}
+  .turn-banner.red{background: linear-gradient(135deg, var(--orange), var(--red-team-dark)); color:#fff;}
+  .field-label{ font-size: 12px; color: var(--muted); margin-bottom: 6px; display:block; }
+  input[type=number], input[type=text]{ width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(240,185,61,0.4); background: rgba(9,12,38,0.6); color: var(--ink); font-size: 16px; margin-bottom: 12px; }
+  select{ width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(240,185,61,0.4); background: rgba(9,12,38,0.6); color: var(--ink); font-size: 14px; margin-bottom: 12px; }
+  input:focus, select:focus{ outline: 2px solid var(--gold); outline-offset:1px; }
+  button{ width: 100%; padding: 12px; border-radius: 10px; border: none; background: linear-gradient(135deg, var(--gold-soft), var(--gold)); color: #2a1c00; font-weight: 700; font-size: 14px; cursor: pointer; letter-spacing: 0.3px; transition: transform 0.1s ease, box-shadow 0.1s ease; }
+  button:hover{transform: translateY(-1px); box-shadow: 0 6px 14px rgba(240,185,61,0.35);}
+  button:active{transform: translateY(0);}
+  button.secondary{ background: rgba(240,185,61,0.12); color: var(--gold-soft); border: 1px solid rgba(240,185,61,0.4); margin-top: 8px; }
+  button.danger{ background: linear-gradient(135deg, #e5734a, #b8351a); color:#fff; }
+  button.choice-purple{ background: linear-gradient(135deg, #8a45a0, var(--purple)); color:#fff; margin-bottom:10px;}
+  button.choice-orange{ background: linear-gradient(135deg, #f3903f, var(--orange)); color:#fff; }
+  .hint{ font-size: 12px; color: var(--muted); margin: -6px 0 12px; line-height:1.4; }
+  .log{ max-height: 200px; overflow-y: auto; font-size: 12.5px; color: var(--muted); display:flex; flex-direction: column; gap: 6px; }
+  .log div{ padding: 6px 8px; background: rgba(255,255,255,0.03); border-radius: 8px; border-left: 3px solid rgba(240,185,61,0.4); }
+  details{ font-size: 12.5px; color: var(--muted); }
+  details summary{ cursor:pointer; color: var(--gold-soft); font-weight:600; margin-bottom:8px; }
+  .legend{ display:grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin-top: 8px; }
+  .legend-item{display:flex; align-items:center; gap:6px;}
+  .legend-swatch{width:14px; height:14px; border-radius:50%; flex-shrink:0;}
+  .correction-row{display:flex; gap:8px; align-items:center; margin-bottom:8px;}
+  .correction-row button{width:auto; padding:6px 12px; font-size:12px;}
+  .correction-row span{flex:1; text-align:center; font-size:13px;}
+  .win-banner{ text-align:center; padding: 16px; border-radius: 14px; font-family: Impact, 'Arial Black', sans-serif; font-size: 22px; letter-spacing: 1px; margin-bottom: 14px; background: linear-gradient(135deg, var(--gold-soft), var(--gold)); color: #2a1c00; }
+  .gate{ text-align:center; padding: 24px 16px; border-radius: 14px; background: rgba(197,45,45,0.12); border: 2px dashed rgba(229,71,31,0.6); margin-bottom:14px; }
+  .gate .big-warn{ font-family: Impact, 'Arial Black', sans-serif; font-size:18px; color:#ff9d7a; margin-bottom:10px; letter-spacing:0.5px; }
+  .card-topic{ font-family: Impact, 'Arial Black', sans-serif; font-size: 22px; text-align:center; margin-bottom:14px; padding:12px; border-radius:12px; background: rgba(240,185,61,0.1); border:1px solid rgba(240,185,61,0.35); color: var(--gold-soft); letter-spacing:0.5px; }
+  .answer-row{ display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:9px; margin-bottom:6px; background: rgba(255,255,255,0.03); cursor:pointer; user-select:none; transition: background 0.15s ease; }
+  .answer-row:hover{ background: rgba(255,255,255,0.07); }
+  .answer-row.checked{ background: rgba(63,174,94,0.18); border:1px solid rgba(63,174,94,0.5); }
+  .answer-row.missed{ background: rgba(229,71,31,0.12); border:1px solid rgba(229,71,31,0.4); }
+  .answer-row .box{ width:20px; height:20px; border-radius:5px; border:2px solid var(--gold-soft); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color: var(--good); }
+  .answer-row .box.missed-box{ border-color: rgba(229,71,31,0.7); color:#e5471f; }
+  .answer-row span.txt{ font-size:14px; flex:1; }
+  .tally{ text-align:center; font-family: Impact, 'Arial Black', sans-serif; font-size:26px; color: var(--good); margin: 8px 0 14px; }
+  .mode-tabs{ display:flex; gap:8px; margin-bottom:16px; }
+  .mode-tabs button{ flex:1; }
+  .mode-tabs button.inactive{ background: rgba(240,185,61,0.1); color: var(--gold-soft); border:1px solid rgba(240,185,61,0.3); }
+  .setup-card{ max-width:520px; margin:0 auto; }
+  .team-name-input{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .team-name-input .dot{ width:18px; height:18px; flex-shrink:0; }
+  .result-box{ text-align:center; padding:18px; border-radius:14px; margin-bottom:14px; }
+  .result-box.win{ background: rgba(63,174,94,0.15); border:1px solid rgba(63,174,94,0.5); }
+  .result-box.lose{ background: rgba(229,71,31,0.15); border:1px solid rgba(229,71,31,0.5); }
+  .result-box .big{ font-family: Impact, 'Arial Black', sans-serif; font-size:28px; margin-bottom:6px; }
+</style>
+</head>
+<body>
+
+<h1>TENSION APP</h1>
+<div class="subtitle" id="subtitle">Digitális kártyahúzó, pálya-követő és pontozó</div>
+<div id="navBar" style="max-width:1080px; margin:0 auto 14px; display:none;">
+  <button class="secondary" style="width:auto; padding:8px 16px; font-size:13px;" onclick="exitToMenu()">&#9664; Menü</button>
+</div>
+
+<div id="root"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+<script>
+/* =========================================================
+   ADATOK: 200 lila + 200 narancssárga saját téma
+   ========================================================= */
+const TOPICS = {"lila": [{"topic": "Gyümölcsök", "answers": ["Alma", "Banán", "Körte", "Szilva", "Barack", "Cseresznye", "Eper", "Málna", "Szőlő", "Görögdinnye"]}, {"topic": "Zöldségek", "answers": ["Paradicsom", "Uborka", "Paprika", "Krumpli", "Vöröshagyma", "Fokhagyma", "Sárgarépa", "Káposzta", "Cékla", "Retek"]}, {"topic": "Háziállatok", "answers": ["Kutya", "Macska", "Tehén", "Ló", "Disznó", "Birka", "Kecske", "Tyúk", "Kacsa", "Nyúl"]}, {"topic": "Afrikai vadállatok", "answers": ["Oroszlán", "Elefánt", "Zsiráf", "Zebra", "Víziló", "Orrszarvú", "Gepárd", "Gorilla", "Hiéna", "Strucc"]}, {"topic": "Színek", "answers": ["Piros", "Kék", "Sárga", "Zöld", "Narancssárga", "Lila", "Fekete", "Fehér", "Barna", "Rózsaszín"]}, {"topic": "Labdajátékok", "answers": ["Futball", "Kosárlabda", "Kézilabda", "Röplabda", "Vízilabda", "Tenisz", "Asztalitenisz", "Golf", "Rögbi", "Baseball"]}, {"topic": "Foglalkozások", "answers": ["Orvos", "Tanár", "Mérnök", "Szakács", "Rendőr", "Tűzoltó", "Ügyvéd", "Pilóta", "Ápoló", "Asztalos"]}, {"topic": "Iskolai tantárgyak", "answers": ["Matematika", "Magyar nyelv és irodalom", "Történelem", "Fizika", "Kémia", "Biológia", "Angol", "Testnevelés", "Rajz", "Ének-zene"]}, {"topic": "Gyorsételek", "answers": ["Hamburger", "Pizza", "Hot dog", "Sült krumpli", "Gyros", "Lángos", "Szendvics", "Palacsinta", "Fánk", "Kürtőskalács"]}, {"topic": "Italok", "answers": ["Kóla", "Szörp", "Ásványvíz", "Narancslé", "Almalé", "Tea", "Kávé", "Forró csokoládé", "Limonádé", "Energiaital"]}, {"topic": "Karácsonyi dolgok", "answers": ["Karácsonyfa", "Mikulás", "Ajándék", "Szaloncukor", "Gyertya", "Hóember", "Rénszarvas", "Angyal", "Fenyőág", "Csillagszóró"]}, {"topic": "Húsvéti dolgok", "answers": ["Nyuszi", "Tojás", "Locsolkodás", "Sonka", "Kalács", "Bárány", "Hímes tojás", "Kolbász", "Torma", "Barka"]}, {"topic": "Testrészek", "answers": ["Fej", "Kar", "Láb", "Kéz", "Has", "Hát", "Nyak", "Váll", "Térd", "Boka"]}, {"topic": "Bútorok a nappaliban", "answers": ["Kanapé", "Fotel", "Dohányzóasztal", "Tévé", "Könyvespolc", "Szőnyeg", "Függöny", "Lámpa", "Komód", "Virágállvány"]}, {"topic": "Közlekedési eszközök", "answers": ["Autó", "Busz", "Vonat", "Villamos", "Metró", "Bicikli", "Motor", "Repülő", "Hajó", "Taxi"]}, {"topic": "Téli dolgok", "answers": ["Hó", "Korcsolya", "Szánkó", "Hógolyó", "Jégcsap", "Sál", "Kesztyű", "Sapka", "Forralt bor", "Hóember"]}, {"topic": "Konyhai eszközök", "answers": ["Fakanál", "Serpenyő", "Fazék", "Kés", "Villa", "Kanál", "Tányér", "Pohár", "Vágódeszka", "Habverő"]}, {"topic": "Zenei hangszerek", "answers": ["Gitár", "Zongora", "Hegedű", "Dob", "Fuvola", "Trombita", "Klarinét", "Cselló", "Harmonika", "Szintetizátor"]}, {"topic": "Iskolai kellékek", "answers": ["Ceruza", "Toll", "Radír", "Vonalzó", "Füzet", "Táska", "Filctoll", "Olló", "Ragasztó", "Tolltartó"]}, {"topic": "Testmozgásformák", "answers": ["Futás", "Úszás", "Kerékpározás", "Jóga", "Aerobik", "Testépítés", "Tánc", "Gyaloglás", "Túrázás", "Korcsolyázás"]}, {"topic": "Fagyiízek", "answers": ["Vanília", "Csokoládé", "Eper", "Citrom", "Málna", "Pisztácia", "Karamell", "Mogyoró", "Kávé", "Mangó"]}, {"topic": "Mesebeli lények", "answers": ["Sárkány", "Boszorkány", "Törpe", "Óriás", "Tündér", "Farkas", "Manó", "Sellő", "Egyszarvú", "Szellem"]}, {"topic": "Ismert rajzfilmek", "answers": ["Oroszlánkirály", "Aladdin", "Jégvarázs", "Pinokkió", "Hamupipőke", "Mulan", "Vaiana", "Shrek", "Kung Fu Panda", "Toy Story"]}, {"topic": "Szuperhősök", "answers": ["Pókember", "Batman", "Superman", "Vasember", "Amerika Kapitány", "Thor", "Hulk", "Fekete Párduc", "Aquaman", "Deadpool"]}, {"topic": "Kártyajátékok", "answers": ["Römi", "Ulti", "Snapszer", "Black Jack", "Póker", "Ferbli", "Bridzs", "Csalimacska", "UNO", "Skat"]}, {"topic": "Magyar nagyvárosok", "answers": ["Budapest", "Debrecen", "Szeged", "Miskolc", "Pécs", "Győr", "Nyíregyháza", "Kecskemét", "Székesfehérvár", "Szombathely"]}, {"topic": "Tengeri állatok", "answers": ["Cápa", "Delfin", "Bálna", "Polip", "Medúza", "Tengeri csillag", "Rák", "Garnéla", "Teknős", "Hering"]}, {"topic": "Reggeli ételek", "answers": ["Tojás", "Szalonna", "Zabkása", "Müzli", "Pirítós", "Lekvár", "Vaj", "Sajt", "Joghurt", "Kakaó"]}, {"topic": "Iskolaudvari játékok", "answers": ["Fogócska", "Bújócska", "Ugróiskola", "Métázás", "Gumizás", "Karikázás", "Kötélhúzás", "Zsákbanfutás", "Kidobós", "Labdázás"]}, {"topic": "Piknik kellékei", "answers": ["Pokróc", "Kosár", "Szendvics", "Termosz", "Napszemüveg", "Naptej", "Sapka", "Frizbi", "Hűtőtáska", "Esernyő"]}, {"topic": "Iskolai ünnepek", "answers": ["Ballagás", "Szalagavató", "Mikulás", "Karácsonyi ünnepség", "Farsang", "Húsvéti ünnepség", "Anyák napja", "Gyereknap", "Tanévnyitó", "Tanévzáró"]}, {"topic": "Gyerekeknek szóló mesefigurák", "answers": ["Miki egér", "Frakk", "Pom Pom", "Vuk", "Micimackó", "Alvin", "Peppa malac", "Bogyó", "Maja a méhecske", "Süsü"]}, {"topic": "Nemzetközi popsztárok", "answers": ["Beyoncé", "Rihanna", "Ed Sheeran", "Adele", "Taylor Swift", "Bruno Mars", "Justin Bieber", "Katy Perry", "Shakira", "Madonna"]}, {"topic": "Magyar előadók", "answers": ["Zámbó Jimmy", "Tóth Vera", "Ganxsta Zolee", "Halott Pénz", "Wellhello", "ByeAlex", "Curtis", "Majka", "Rúzsa Magdi", "Demjén Ferenc"]}, {"topic": "Iskolai szakkörök", "answers": ["Sakk", "Rajz", "Ének", "Színjátszó", "Néptánc", "Cserkészet", "Sportkör", "Informatika", "Kézműves", "Zeneiskola"]}, {"topic": "Gyümölcsös sütemények", "answers": ["Almás pite", "Meggyes rétes", "Szilvás gombóc", "Barackos pite", "Citromtorta", "Málnás piskóta", "Epertorta", "Banánkenyér", "Ananászos süti", "Narancstorta"]}, {"topic": "Konyhai fűszerek", "answers": ["Só", "Bors", "Pirospaprika", "Fokhagyma", "Bazsalikom", "Oregánó", "Kömény", "Rozmaring", "Kakukkfű", "Fahéj"]}, {"topic": "Reptéri dolgok", "answers": ["Útlevél", "Beszállókártya", "Bőrönd", "Vámellenőrzés", "Váróterem", "Pilóta", "Légiutas-kísérő", "Repülőgép", "Csomagkiadás", "Duty free"]}, {"topic": "Kutyafajták", "answers": ["Puli", "Vizsla", "Labrador", "Németjuhász", "Beagle", "Mopsz", "Dalmata", "Bulldog", "Chihuahua", "Husky"]}, {"topic": "Macskafajták", "answers": ["Perzsa", "Sziámi", "Maine coon", "Brit rövidszőrű", "Sphynx", "Norvég erdei", "Ragdoll", "Bengáli", "Angóra", "Skót lógófülű"]}, {"topic": "Iskolai büfé kedvencek", "answers": ["Zsíroskenyér", "Túró Rudi", "Croissant", "Rétes", "Pogácsa", "Kifli", "Müzliszelet", "Sajtos rúd", "Almás pite", "Ásványvíz"]}, {"topic": "Karácsonyi filmek", "answers": ["Reszkessetek betörők", "Grincs", "Polar Express", "Elf – Mikulás lettem", "Karácsonyi ének", "Jégvarázs", "Csingiling", "Miracle a 34. utcán", "Szeretem a karácsonyt", "Karácsonyi vakáció"]}, {"topic": "Sportmárkák", "answers": ["Nike", "Adidas", "Puma", "Reebok", "Under Armour", "New Balance", "Asics", "Fila", "Kappa", "Umbro"]}, {"topic": "Autómárkák", "answers": ["Toyota", "Ford", "BMW", "Audi", "Mercedes", "Volkswagen", "Opel", "Skoda", "Renault", "Fiat"]}, {"topic": "Mobiltelefon-gyártók", "answers": ["Samsung", "Apple", "Huawei", "Xiaomi", "Nokia", "Sony", "LG", "Motorola", "OnePlus", "Oppo"]}, {"topic": "Gyorséttermek", "answers": ["McDonald's", "Burger King", "KFC", "Subway", "Pizza Hut", "Domino's", "Starbucks", "Five Guys", "Wendy's", "Taco Bell"]}, {"topic": "Közösségi médiafelületek", "answers": ["Facebook", "Instagram", "TikTok", "X (Twitter)", "YouTube", "Snapchat", "LinkedIn", "Pinterest", "Reddit", "WhatsApp"]}, {"topic": "Videojáték-konzolok", "answers": ["PlayStation", "Xbox", "Nintendo Switch", "Game Boy", "Wii", "Sega Genesis", "PSP", "Nintendo 64", "Atari", "Nintendo DS"]}, {"topic": "Iskolai dolgozók", "answers": ["Igazgató", "Igazgatóhelyettes", "Osztályfőnök", "Tanár", "Tanító", "Gondnok", "Portás", "Iskolatitkár", "Iskolapszichológus", "Könyvtáros"]}, {"topic": "Fürdőszobai eszközök", "answers": ["Fogkefe", "Fogkrém", "Szappan", "Sampon", "Törölköző", "Hajszárító", "Borotva", "Fésű", "Tükör", "Zuhanyfüggöny"]}, {"topic": "Nyári programok", "answers": ["Strandolás", "Fagyizás", "Kerékpározás", "Kempingezés", "Grillezés", "Túrázás", "Horgászat", "Uszodázás", "Napozás", "Fesztiválozás"]}, {"topic": "Halloweeni dolgok", "answers": ["Tök", "Jelmez", "Édesség", "Pók", "Denevér", "Szellem", "Boszorkány", "Vámpír", "Zombi", "Koponya"]}, {"topic": "Iskolai sportórák", "answers": ["Foci", "Kosárlabda", "Röplabda", "Atlétika", "Torna", "Úszás", "Tollaslabda", "Asztalitenisz", "Futás", "Kézilabda"]}, {"topic": "Magyaros ételek", "answers": ["Gulyás", "Pörkölt", "Halászlé", "Töltött káposzta", "Lecsó", "Rántott hús", "Székelykáposzta", "Paprikás csirke", "Sólet", "Bableves"]}, {"topic": "Édességek", "answers": ["Csokoládé", "Nyalóka", "Rágógumi", "Zselécukor", "Marcipán", "Karamella", "Nugát", "Törökméz", "Csokis szelet", "Gumicukor"]}, {"topic": "Nyári gyümölcsök", "answers": ["Görögdinnye", "Sárgadinnye", "Barack", "Szilva", "Cseresznye", "Meggy", "Málna", "Áfonya", "Egres", "Ribizli"]}, {"topic": "Ünnepi dísznövények", "answers": ["Mikulásvirág", "Fenyő", "Fagyöngy", "Hóvirág", "Jácint", "Nárcisz", "Tulipán", "Krizantém", "Rózsa", "Orgona"]}, {"topic": "Iskolai kirándulóhelyek", "answers": ["Állatkert", "Múzeum", "Vadaspark", "Planetárium", "Termálfürdő", "Vár", "Barlang", "Botanikuskert", "Skanzen", "Aquapark"]}, {"topic": "Vízi közlekedési eszközök", "answers": ["Hajó", "Komp", "Vitorlás", "Kajak", "Kenu", "Jetski", "Katamarán", "Gőzhajó", "Csónak", "Tutaj"]}, {"topic": "Konyhai gépek", "answers": ["Mixer", "Turmixgép", "Kávéfőző", "Kenyérpirító", "Robotgép", "Mikrohullámú sütő", "Hűtő", "Fagyasztó", "Mosogatógép", "Vízforraló"]}, {"topic": "Társastáncok", "answers": ["Keringő", "Palotás", "Csárdás", "Polka", "Cha-cha-cha", "Vals", "Foxtrott", "Tangó", "Rumba", "Szamba"]}, {"topic": "Kirándulós felszerelés", "answers": ["Hátizsák", "Túrabakancs", "Kulacs", "Iránytű", "Térkép", "Esőkabát", "Sátor", "Hálózsák", "Elemlámpa", "Napszemüveg"]}, {"topic": "Édesvízi halak", "answers": ["Ponty", "Harcsa", "Csuka", "Süllő", "Keszeg", "Compó", "Balin", "Kárász", "Pisztráng", "Angolna"]}, {"topic": "Tavaszi jelek", "answers": ["Hóvirág", "Fecske", "Gólya", "Bárány", "Húsvét", "Nagytakarítás", "Kertészkedés", "Virágzás", "Langyos eső", "Rügyfakadás"]}, {"topic": "Kerti szerszámok", "answers": ["Ásó", "Kapa", "Gereblye", "Locsolókanna", "Metszőolló", "Talicska", "Fűkasza", "Kertészkesztyű", "Ültetőlapát", "Kerti slag"]}, {"topic": "Játszótéri eszközök", "answers": ["Csúszda", "Hinta", "Mászóka", "Homokozó", "Libikóka", "Körhinta", "Trambulin", "Mászófal", "Rugós játék", "Kalandpark"]}, {"topic": "Iskolatáska tartalma", "answers": ["Tankönyv", "Füzet", "Tolltartó", "Uzsonna", "Kulacs", "Tornazsák", "Ellenőrző", "Vonalzó", "Számológép", "Kulcs"]}, {"topic": "Piaci áruk", "answers": ["Zöldség", "Gyümölcs", "Sajt", "Méz", "Tojás", "Tejtermék", "Virág", "Kenyér", "Hús", "Befőtt"]}, {"topic": "Nyaralási úti célok magyaroknak", "answers": ["Balaton", "Horvátország", "Görögország", "Olaszország", "Ausztria", "Spanyolország", "Törökország", "Egyiptom", "Bulgária", "Szlovénia"]}, {"topic": "Iskolai osztályzatok", "answers": ["Jeles", "Jó", "Közepes", "Elégséges", "Elégtelen", "Ötös", "Négyes", "Hármas", "Kettes", "Egyes"]}, {"topic": "Konyhakerti növények", "answers": ["Paradicsom", "Paprika", "Uborka", "Saláta", "Retek", "Petrezselyem", "Kapor", "Bazsalikom", "Zöldbab", "Sütőtök"]}, {"topic": "Bevásárlóközpont üzletei", "answers": ["Ruhabolt", "Cipőbolt", "Élelmiszerbolt", "Könyvesbolt", "Mozi", "Játékbolt", "Elektronikai bolt", "Étterem", "Drogéria", "Ékszerbolt"]}, {"topic": "Vízi sportok", "answers": ["Úszás", "Vízilabda", "Szörfözés", "Vitorlázás", "Búvárkodás", "Kajakozás", "Evezés", "Vízisí", "Rafting", "Sárkányhajózás"]}, {"topic": "Gyerekjátékok (tárgyak)", "answers": ["Baba", "Plüssmaci", "Lego", "Autó", "Puzzle", "Ugrálókötél", "Léggömb", "Buborékfújó", "Társasjáték", "Építőkocka"]}, {"topic": "Reggeli/esti higiénia", "answers": ["Fogmosás", "Zuhanyzás", "Hajmosás", "Arclemosás", "Körömvágás", "Fésülködés", "Krémezés", "Fogselyem", "Dezodor", "Borotválkozás"]}, {"topic": "Zöldségfélék levesbe", "answers": ["Sárgarépa", "Zeller", "Petrezselyem", "Krumpli", "Hagyma", "Karalábé", "Karfiol", "Borsó", "Kelkáposzta", "Paradicsom"]}, {"topic": "Iskolai óratípusok", "answers": ["Matek óra", "Testnevelés óra", "Rajzóra", "Énekóra", "Történelemóra", "Technika óra", "Osztályfőnöki óra", "Informatika óra", "Idegen nyelv óra", "Biológia óra"]}, {"topic": "Vidámparki attrakciók", "answers": ["Hullámvasút", "Óriáskerék", "Céllövölde", "Autóskodás", "Körhinta", "Szabadesés torony", "Tükörlabirintus", "Kalózhajó", "Vízi csúszda", "Ugrálóvár"]}, {"topic": "Fürdőhelyek Magyarországon", "answers": ["Hévíz", "Hajdúszoboszló", "Bükfürdő", "Gyula", "Egerszalók", "Zalakaros", "Sárvár", "Harkány", "Miskolctapolca", "Cserkeszőlő"]}, {"topic": "Reggeli kenyérfélék", "answers": ["Zsemle", "Kifli", "Cipó", "Bagett", "Rozskenyér", "Teljes kiőrlésű kenyér", "Vekni", "Pogácsa", "Lángos", "Perec"]}, {"topic": "Iskolai jutalmazási formák", "answers": ["Dicséret", "Ötös", "Pluszpont", "Oklevél", "Kirándulás", "Jutalomkép", "Csillag", "Pecsét", "Emléklap", "Ajándék"]}, {"topic": "Kerti bogarak/rovarok", "answers": ["Katicabogár", "Méh", "Pillangó", "Hangya", "Szitakötő", "Szöcske", "Darázs", "Csiga", "Poszméh", "Bogár"]}, {"topic": "Vasárnapi ebéd fogásai", "answers": ["Leves", "Húsleves", "Sült hús", "Köret", "Saláta", "Desszert", "Rántott hús", "Krumplipüré", "Rizs", "Kompót"]}, {"topic": "Játékfilmek gyerekeknek", "answers": ["Harry Potter", "Jégvarázs", "Sing – Ki a győztes?", "Coco", "Vaiana", "Zootropolis", "Kung Fu Panda", "Shrek", "Toy Story", "Minyonok"]}, {"topic": "Iskolai közlekedési eszközök otthonról", "answers": ["Gyalog", "Bicikli", "Roller", "Busz", "Villamos", "Autó", "Metró", "Vonat", "Trolibusz", "Iskolabusz"]}, {"topic": "Öltözködési kellékek télen", "answers": ["Sapka", "Sál", "Kesztyű", "Kabát", "Bakancs", "Pulóver", "Hócipő", "Termonadrág", "Fülmelegítő", "Muff"]}, {"topic": "Nyári öltözködés", "answers": ["Rövidnadrág", "Póló", "Papucs", "Szandál", "Napszemüveg", "Kalap", "Fürdőruha", "Ujjatlan felső", "Short", "Strandtörülköző"]}, {"topic": "Iskolai tornaterem eszközei", "answers": ["Labda", "Kötél", "Zsámoly", "Bordásfal", "Szőnyeg", "Karika", "Ugrókötél", "Medicinlabda", "Trambulin", "Gyűrű"]}, {"topic": "Piknik szendvicsfeltétek", "answers": ["Sonka", "Sajt", "Saláta", "Paradicsom", "Uborka", "Vaj", "Tojás", "Kolbász", "Majonéz", "Mustár"]}, {"topic": "Iskolai közösségi programok", "answers": ["Osztálykirándulás", "Farsang", "Ballagás", "Gólyabál", "Szalagavató", "Sportnap", "Táncház", "Táborozás", "Karácsonyi vásár", "Diáknap"]}, {"topic": "Konyhai alapanyagok sütéshez", "answers": ["Liszt", "Cukor", "Tojás", "Vaj", "Tej", "Élesztő", "Sütőpor", "Vanília", "Só", "Olaj"]}, {"topic": "Utcai árusok kínálata", "answers": ["Gesztenye", "Kukorica", "Lángos", "Kürtőskalács", "Fagylalt", "Vattacukor", "Popcorn", "Mézeskalács", "Forralt bor", "Palacsinta"]}, {"topic": "Játékos csapatépítő gyakorlatok", "answers": ["Kötélhúzás", "Zsákbanfutás", "Váltófutás", "Akadálypálya", "Kincskeresés", "Csapatépítő játék", "Puzzle összerakás", "Tárgyfelismerés", "Vakvezetés", "Csapatszlogen"]}, {"topic": "Iskolai osztálytermi bútorok", "answers": ["Pad", "Szék", "Tábla", "Tanári asztal", "Szekrény", "Polc", "Kréta", "Projektor", "Térkép", "Óra"]}, {"topic": "Kerti madarak", "answers": ["Veréb", "Cinke", "Rigó", "Galamb", "Szarka", "Varjú", "Fecske", "Gólya", "Bagoly", "Fürj"]}, {"topic": "Konyhai desszertek", "answers": ["Sütemény", "Torta", "Fagylalt", "Puding", "Palacsinta", "Gofri", "Muffin", "Keksz", "Rétes", "Túrógombóc"]}, {"topic": "Iskolai versenytárgyak", "answers": ["Matekverseny", "Helyesírási verseny", "Sportverseny", "Rajzverseny", "Éneklési verseny", "Szavalóverseny", "Vetélkedő", "Kvíz", "Sakkverseny", "Tanulmányi verseny"]}, {"topic": "Kerti bútorok", "answers": ["Napozóágy", "Kerti asztal", "Kerti szék", "Napernyő", "Grillsütő", "Hinta", "Függőágy", "Kerti pad", "Kerti lámpa", "Homokozó"]}, {"topic": "Reggeli tejtermékek", "answers": ["Tej", "Joghurt", "Vaj", "Sajt", "Túró", "Kefir", "Tejföl", "Tejszín", "Aludttej", "Tejeskávé"]}, {"topic": "Vidéki élet dolgai", "answers": ["Traktor", "Csűr", "Kút", "Baromfiudvar", "Istálló", "Szénakazal", "Kerítés", "Malom", "Gémeskút", "Falusi ház"]}, {"topic": "Sárga színű dolgok", "answers": ["Banán", "Citrom", "Napraforgó", "Kukorica", "Sajt", "Vaj", "Méz", "Gumikacsa", "Taxi", "Sárga jelzőlámpa"]}, {"topic": "Zöld színű dolgok", "answers": ["Fű", "Levél", "Béka", "Uborka", "Brokkoli", "Zöld alma", "Smaragd", "Zöld lámpa", "Kaktusz", "Teknős"]}, {"topic": "Piros színű dolgok", "answers": ["Alma", "Paradicsom", "Cseresznye", "Eper", "Rózsa", "Tűzoltóautó", "Piros lámpa", "Mikulás ruhája", "Cékla", "Stop tábla"]}, {"topic": "Kék színű dolgok", "answers": ["Ég", "Tenger", "Áfonya", "Farmernadrág", "Zafír", "Kék bálna", "Toll (madár)", "Rendőrségi villogó", "Páva", "Kék szem"]}, {"topic": "Fehér színű dolgok", "answers": ["Hó", "Felhő", "Tej", "Papír", "Cukor", "Liszt", "Gyöngy", "Fogsor", "Nyúl (fehér)", "Menyasszonyi ruha"]}, {"topic": "A fürdőszobában található dolgok", "answers": ["Törölköző", "Szappan", "Sampon", "Fogkefe", "Fürdőkád", "Zuhanyzó", "Vécé", "Mosdókagyló", "Tükör", "Fürdőköpeny"]}, {"topic": "A konyhában található dolgok", "answers": ["Tűzhely", "Hűtő", "Mosogató", "Konyhaszekrény", "Edények", "Konyhapult", "Mikrohullámú sütő", "Kávéfőző", "Vágódeszka", "Konyhai mérleg"]}, {"topic": "A hálószobában található dolgok", "answers": ["Ágy", "Párna", "Paplan", "Éjjeliszekrény", "Ruhásszekrény", "Ébresztőóra", "Lámpa", "Tükör", "Szőnyeg", "Függöny"]}, {"topic": "Uszodai/strandi kellékek", "answers": ["Úszógumi", "Napolaj", "Úszószemüveg", "Törölköző", "Papucs", "Fürdőruha", "Napszemüveg", "Strandlabda", "Hűtőtáska", "Napozóágy"]}, {"topic": "Tavaszi kerti munkák", "answers": ["Ültetés", "Gyomlálás", "Locsolás", "Metszés", "Kapálás", "Trágyázás", "Vetés", "Gereblyézés", "Permetezés", "Palántázás"]}, {"topic": "Vidéki piac kínálata", "answers": ["Tojás", "Méz", "Sajt", "Zöldség", "Gyümölcs", "Virág", "Kenyér", "Befőtt", "Tejtermék", "Hús"]}, {"topic": "Iskolai osztályterem dekoráció", "answers": ["Faliújság", "Naptár", "Térkép", "Növény", "Rajzok", "Ábécés tábla", "Órarend", "Matricák", "Zászló", "Poszterek"]}, {"topic": "Tavaszi virágok", "answers": ["Tulipán", "Nárcisz", "Jácint", "Hóvirág", "Ibolya", "Gyöngyvirág", "Pipacs", "Margaréta", "Orgona", "Krókusz"]}, {"topic": "Karácsonyi ételek", "answers": ["Halászlé", "Bejgli", "Töltött káposzta", "Hal", "Pulyka", "Mákos guba", "Szaloncukor", "Forralt bor", "Mézeskalács", "Sült liba"]}, {"topic": "Reggeli müzli-kiegészítők", "answers": ["Tej", "Joghurt", "Méz", "Banán", "Mazsola", "Dió", "Mogyoró", "Fahéj", "Áfonya", "Csokireszelék"]}, {"topic": "Vidámparki édességek", "answers": ["Vattacukor", "Gesztenye", "Fagyi", "Popcorn", "Törökméz", "Mézeskalács szív", "Cukorka", "Csemege kukorica", "Almás lángos", "Palacsinta"]}, {"topic": "Konyhai pohár-/edénykészlet", "answers": ["Bögre", "Pohár", "Kancsó", "Termosz", "Kulacs", "Söröskorsó", "Boros pohár", "Kávéscsésze", "Teáscsésze", "Tál"]}, {"topic": "Barna színű dolgok", "answers": ["Csokoládé", "Föld", "Fatörzs", "Medve", "Kávé", "Bőrtáska", "Gesztenye", "Csizma", "Mogyoró", "Barna kenyér"]}, {"topic": "Rózsaszín dolgok", "answers": ["Malac", "Flamingó", "Rágógumi", "Vattacukor", "Rúzs", "Balerina ruha", "Eperfagyi", "Cukorka", "Rózsaszín párna", "Rózsaszín párduc"]}, {"topic": "Nyaralási strandtáska tartalma", "answers": ["Törölköző", "Naptej", "Könyv", "Napszemüveg", "Palack víz", "Kalap", "Papucs", "Fürdőruha", "Telefon", "Kulcsok"]}, {"topic": "Iskolai büntetőfeladatok/rutinok", "answers": ["Padtörlés", "Táblatörlés", "Sorban állás", "Csendben ülés", "Feleletre készülés", "Füzetellenőrzés", "Órarend bemutatása", "Igazolás leadása", "Kréta felvétele", "Napló vezetése"]}, {"topic": "Konyhai zöldségfélék salátába", "answers": ["Jégsaláta", "Uborka", "Paradicsom", "Retek", "Kukorica", "Olívabogyó", "Sárgarépa", "Lila hagyma", "Kaliforniai paprika", "Rukkola"]}, {"topic": "Nyári italok", "answers": ["Limonádé", "Jeges tea", "Koktél", "Gyümölcslé", "Ásványvíz", "Fröccs", "Szörp", "Milkshake", "Turmix", "Sör"]}, {"topic": "Piaci gyümölcsök ősszel", "answers": ["Alma", "Körte", "Szőlő", "Naspolya", "Gesztenye", "Dió", "Birsalma", "Szilva", "Datolyaszilva", "Csipkebogyó"]}, {"topic": "Ismert kávéfajták", "answers": ["Espresso", "Cappuccino", "Latte", "Americano", "Macchiato", "Mocha", "Ristretto", "Flat white", "Frappé", "Ír kávé"]}, {"topic": "Iskolai rendezvények tavasszal", "answers": ["Farsang", "Húsvéti ünnepség", "Anyák napi műsor", "Papírgyűjtés", "Rajzverseny", "Föld napja program", "Gyereknap", "Sportnap", "Ballagás", "Bringás nap"]}, {"topic": "Konyhai tésztafélék", "answers": ["Spagetti", "Penne", "Fusilli", "Lasagne", "Tagliatelle", "Gnocchi", "Ravioli", "Makaróni", "Cérnametélt", "Csigatészta"]}, {"topic": "Piknikkosár tartalma", "answers": ["Szendvics", "Gyümölcs", "Sajt", "Termosz", "Szalvéta", "Pléd", "Bor", "Kekszek", "Só és bors", "Papírtányér"]}, {"topic": "Ismert vígjátéksorozatok", "answers": ["Jóbarátok", "Így jártam anyátokkal", "Két pasi meg egy kicsi", "Az irodisták", "Brooklyn 99", "Family Guy", "Simpson család", "South Park", "A Nagy Bumm Elmélet", "Modern család"]}, {"topic": "Ismert rajzfilmsorozatok gyerekeknek", "answers": ["SpongyaBob Kockanadrág", "Tom és Jerry", "Scooby-Doo", "Looney Tunes", "Pokémon", "Peppa malac", "Superszárnyak", "PJ Masks", "Miraculous", "Doktor Balubab"]}, {"topic": "Iskolai testnevelés eszközök", "answers": ["Labda", "Kötél", "Karika", "Zsámoly", "Szőnyeg", "Bordásfal", "Súlyzó", "Ugrókötél", "Trambulin", "Frizbi"]}, {"topic": "Reggeli lekvárízek", "answers": ["Eper", "Meggy", "Barack", "Málna", "Szilva", "Narancs", "Áfonya", "Ribizli", "Cseresznye", "Dió"]}, {"topic": "Divatos ruhadarabok nyáron", "answers": ["Rövidnadrág", "Szoknya", "Ujjatlan felső", "Napkalap", "Szandál", "Fürdőruha", "Vászonnadrág", "Napszemüveg", "Kendő", "Lenvászon ing"]}, {"topic": "Ismert csokoládémárkák", "answers": ["Milka", "Toblerone", "Kinder", "Lindt", "Nestlé", "Cadbury", "Ferrero Rocher", "Túró Rudi", "Balaton szelet", "Sport szelet"]}, {"topic": "Karácsonyi dalok", "answers": ["Mennyből az angyal", "Csendes éj", "Kis karácsony, nagy karácsony", "Jingle Bells", "Jézuskám kérlek szállj le hozzánk", "Pásztorok, pásztorok", "Ó, jöjjetek hívek", "Last Christmas", "All I Want for Christmas Is You", "Feliz Navidad"]}, {"topic": "Iskolai szertári sporteszközök", "answers": ["Kosárlabda", "Focilabda", "Kézilabda", "Röplabda", "Ugrókötél", "Tornaszőnyeg", "Bordásfal", "Gyűrű", "Medicinlabda", "Súlyzó"]}, {"topic": "Piros-fehér árnyalatú édességek/sütik", "answers": ["Eperfagyi", "Habcsók", "Piskótatekercs", "Bejgli", "Karamellás krémes", "Gesztenyepüré", "Ischler", "Rákóczi túrós", "Eperhabtorta", "Piros csokis szív"]}, {"topic": "Vidéki gazdasági épületek", "answers": ["Csűr", "Istálló", "Ól", "Magtár", "Kút", "Pajta", "Baromfiudvar", "Méhes", "Silótorony", "Terménytároló"]}, {"topic": "Ismert társasjátékok", "answers": ["Monopoly", "Activity", "Ki nevet a végén", "Cluedo", "Trivial Pursuit", "Ludo", "Dobble", "Jenga", "Catan telepesei", "Alias"]}, {"topic": "Ismert mesekönyv-sorozatok gyerekeknek", "answers": ["Harry Potter", "Micimackó", "Pöttyös Panni", "Momo", "Pettson és Findus", "A kis herceg", "Pom Pom meséi", "Vuk", "Négyszögletű Kerek Erdő", "Rumini"]}, {"topic": "Ismert kutyaeledel-/állateledel-márkák", "answers": ["Pedigree", "Whiskas", "Royal Canin", "Purina", "Chappi", "Felix", "Frolic", "Sheba", "Bozita", "Brit"]}, {"topic": "Iskolai kirándulás felszerelése", "answers": ["Hátizsák", "Uzsonna", "Kulacs", "Esőkabát", "Térkép", "Fényképezőgép", "Napszemüveg", "Sapka", "Tornacipő", "Zsebkendő"]}, {"topic": "Ismert vidámparkok", "answers": ["Vidám Park (Budapest)", "Europa-Park", "Disneyland", "Efteling", "PortAventura", "Alton Towers", "Legoland", "Gardaland", "Tivoli Gardens", "Phantasialand"]}, {"topic": "Konyhai sütőformák/eszközök sütéshez", "answers": ["Tortaforma", "Muffinsütő", "Sütőlap", "Habzsák", "Nyújtófa", "Habverő", "Mérőpohár", "Szűrő", "Kelesztőtál", "Sütőpapír"]}, {"topic": "Iskolai ünnepi versformák/versek", "answers": ["Szózat", "Nemzeti dal", "Himnusz", "Ha a föld isten kalapja", "Az én rózsafám", "Anyák napi vers", "Mikulás vers", "Karácsonyi vers", "Szülőföldem", "Aki nem hisz a csodákban"]}, {"topic": "Ismert táncos filmzenék/musicalek", "answers": ["Grease", "Mamma Mia!", "Chicago", "A operaház fantomja", "West Side Story", "La La Land", "Mary Poppins", "Hamilton", "Aladdin", "Jégvarázs"]}, {"topic": "Piknik/kerti grillezés kellékei", "answers": ["Grillsütő", "Szén", "Nyárs", "Sör", "Szalvéta", "Papírtányér", "Fűszerek", "Húsvágó deszka", "Kolbász", "Csemegekukorica"]}, {"topic": "Ismert kávézólánc-márkák", "answers": ["Starbucks", "Costa Coffee", "Coffeeshop Company", "Segafredo", "Nespresso", "Costa", "Illy", "Lavazza", "Julius Meinl", "Café Frei"]}, {"topic": "Iskolai rajzeszközök", "answers": ["Ceruza", "Zsírkréta", "Vízfesték", "Filctoll", "Pasztellkréta", "Rajzlap", "Ecset", "Radír", "Hegyező", "Vonalzó"]}, {"topic": "Ismert gyerekjátszóterek/parkok Budapesten", "answers": ["Városliget", "Margitsziget", "Népliget", "Csepel Park", "Millenáris Park", "Feneketlen-tó", "Vérmező", "Kopaszi-gát", "Óbudai-sziget", "Normafa"]}, {"topic": "Konyhai italkészítéshez szükséges eszközök", "answers": ["Turmixgép", "Shaker", "Citromfacsaró", "Jégkockatartó", "Szódavízkészítő", "Kávéfőző", "Teáskanna", "Poháralátét", "Szűrő", "Kancsó"]}, {"topic": "Ismert állatkerti állatok", "answers": ["Elefánt", "Zsiráf", "Oroszlán", "Tigris", "Majom", "Zebra", "Panda", "Pingvin", "Krokodil", "Kígyó"]}, {"topic": "Iskolai közlekedésbiztonsági eszközök", "answers": ["Zebra", "Jelzőlámpa", "Kerékpáros sisak", "Láthatósági mellény", "Iskolarendőr", "Közlekedési tábla", "Biztonsági öv", "Gyalogosjelzés", "Sebességkorlátozó tábla", "Iskolabusz"]}, {"topic": "Reggeli péksütemények", "answers": ["Kifli", "Zsemle", "Croissant", "Táska", "Bagett", "Pogácsa", "Kakaós csiga", "Vajas croissant", "Sajtos rúd", "Mákos kifli"]}, {"topic": "Ismert vízi élőlények tavakban", "answers": ["Ponty", "Kacsa", "Hattyú", "Béka", "Vízisikló", "Csuka", "Teknős", "Gólya", "Rák", "Vidra"]}, {"topic": "Nyaralási kelléktár repüléshez", "answers": ["Bőrönd", "Útlevél", "Napszemüveg", "Fényvédő krém", "Kalap", "Fürdőruha", "Papucs", "Könyv", "Fejhallgató", "Adapter"]}, {"topic": "Karácsonyfadíszek", "answers": ["Gömb", "Angyalhaj", "Szaloncukor", "Girland", "Csillagszóró", "Toboz", "Csillag a fa tetején", "Fényfüzér", "Mézeskalács figura", "Ajándékdoboz dísz"]}, {"topic": "Ismert popegyüttesek", "answers": ["ABBA", "Queen", "Coldplay", "Maroon 5", "Beatles", "Backstreet Boys", "Spice Girls", "One Direction", "Imagine Dragons", "U2"]}, {"topic": "Ismert magyar zenekarok", "answers": ["Republic", "Neoton Família", "Omega", "Kispál és a Borz", "Quimby", "Anna and the Barbies", "Bagossy Brothers Company", "Tankcsapda", "Irie Maffia", "Follow the Flow"]}, {"topic": "Iskolai büfé italok", "answers": ["Kóla", "Ásványvíz", "Szörp", "Ice tea", "Tej", "Kakaó", "Gyümölcslé", "Energiaital", "Limonádé", "Narancslé"]}, {"topic": "Reggeli tojásételek", "answers": ["Rántotta", "Buggyantott tojás", "Tükörtojás", "Keménytojás", "Lágytojás", "Omlett", "Kolbászos rántotta", "Sonkás tükörtojás", "Tojásrakott(krumpli)", "Tojáskrém"]}, {"topic": "Ismert fagylaltozók/édességláncok", "answers": ["Gelato Rosa", "Fábián fagyizó", "Cofecta", "Auguszt cukrászda", "Gerbeaud", "Daubner cukrászda", "Ruszwurm", "Fragola", "Venezia fagylaltozó", "Marcipán cukrászda"]}, {"topic": "Iskolai kirándulóbusz kellékei", "answers": ["Ülőhely", "Biztonsági öv", "Csomagtartó", "Klíma", "Ablak", "Vezető", "Kísérőtanár", "Útikönyv", "Zene", "Uzsonna"]}, {"topic": "Ismert városi parkok", "answers": ["Central Park", "Hyde Park", "Városliget", "Retiro Park", "Villa Borghese", "Stanley Park", "Gorkij Park", "Tiergarten", "Prater", "Bois de Boulogne"]}, {"topic": "Nyári tábori tevékenységek", "answers": ["Túrázás", "Éneklés a tábortűznél", "Kézműveskedés", "Fürdés a tóban", "Sportvetélkedő", "Éjszakai bátorságpróba", "Csapatjáték", "Kincskeresés", "Sátorverés", "Vetélkedő"]}, {"topic": "Iskolai ebédlő ételek", "answers": ["Leves", "Rántott hús", "Krumplipüré", "Rizs", "Saláta", "Kompót", "Palacsinta", "Tészta", "Csirkemell", "Zöldségköret"]}, {"topic": "Iskolai szabadidős tevékenységek", "answers": ["Olvasás", "Rajzolás", "Kirándulás", "Focizás", "Zenélés", "Táncolás", "Videojátékozás", "Kézműveskedés", "Kártyázás", "Biciklizés"]}, {"topic": "Ismert internetes böngészők", "answers": ["Google Chrome", "Mozilla Firefox", "Safari", "Microsoft Edge", "Opera", "Internet Explorer", "Brave", "Vivaldi", "Tor Browser", "UC Browser"]}, {"topic": "Reggeli szendvicsfeltétek", "answers": ["Vaj", "Lekvár", "Sajt", "Sonka", "Méz", "Nutella", "Uborka", "Paradicsom", "Szalámi", "Libamáj"]}, {"topic": "Ismert digitális fizetési szolgáltatók", "answers": ["PayPal", "Apple Pay", "Google Pay", "Revolut", "Wise", "Venmo", "Skrill", "Stripe", "Klarna", "OTP SimplePay"]}, {"topic": "Iskolai egyenruha-elemek (ahol van)", "answers": ["Blézer", "Nyakkendő", "Fehér ing", "Iskolajelvény", "Szoknya", "Nadrág", "Pulóver", "Cipő", "Zokni", "Sál"]}, {"topic": "Ismert reggeliző láncok/kávézók", "answers": ["McCafé", "Costa Coffee", "Starbucks", "Café Frei", "Segafredo", "Julius Meinl", "Coffeeshop Company", "Costa Express", "Presszó", "Nespresso Boutique"]}, {"topic": "Kerti gyümölcsfák", "answers": ["Almafa", "Körtefa", "Szilvafa", "Cseresznyefa", "Barackfa", "Diófa", "Meggyfa", "Naspolyafa", "Birsalmafa", "Mandulafa"]}, {"topic": "Konyhai zöldfűszerek cserépben", "answers": ["Bazsalikom", "Petrezselyem", "Kapor", "Snidling", "Rozmaring", "Kakukkfű", "Menta", "Oregánó", "Zsálya", "Majoranna"]}, {"topic": "Ismert vízparkok Magyarországon", "answers": ["Aquaworld", "Caramell Élményfürdő", "Aquapalace", "Zalakaros Gyógyfürdő", "Aquarena", "Sárvári Gyógyfürdő", "Debreceni Aquaticum", "Hajdúszoboszlói Aquapark", "Gyulai Várfürdő", "Aqua Sportközpont Győr"]}, {"topic": "Iskolai ballagási hagyományok", "answers": ["Szalag", "Tarisznya", "Csokor", "Búcsúbeszéd", "Iskolazászló", "Ballagási induló", "Tablókép", "Emléklap", "Virágcsokor a tanároknak", "Ballagási ruha"]}, {"topic": "Reggeli gabonapelyhek", "answers": ["Corn Flakes", "Musli", "Csokis golyók", "Rizspelyhek", "Zabpehely", "Puffasztott rizs", "Gyümölcsös müzli", "Mézes müzli", "Granola", "Puffasztott búza"]}, {"topic": "Ismert autókölcsönző cégek", "answers": ["Hertz", "Avis", "Europcar", "Sixt", "Budget", "Enterprise", "Alamo", "National", "Thrifty", "Green Motion"]}, {"topic": "Konyhai fűszertartó tartalma", "answers": ["Só", "Bors", "Pirospaprika", "Fahéj", "Kömény", "Bazsalikom", "Oregánó", "Kakukkfű", "Vanília", "Fokhagyma-por"]}, {"topic": "Ismert diszkó-/bulinegyedek Budapesten", "answers": ["Ráday utca", "Gozsdu udvar", "Kazinczy utca", "Szimpla Kert", "Instant", "Akvárium Klub", "Corvintető", "Dürer Kert", "Ötkert", "Fogasház"]}, {"topic": "Iskolai tanulmányi kirándulás céljai", "answers": ["Múzeum", "Állatkert", "Termálfürdő", "Vár", "Barlang", "Skanzen", "Planetárium", "Vadaspark", "Történelmi emlékhely", "Botanikuskert"]}, {"topic": "Reggeli konyhai gépek", "answers": ["Kenyérpirító", "Kávéfőző", "Turmixgép", "Gofrisütő", "Tojásfőző", "Vízforraló", "Kenyérsütőgép", "Mikrohullámú sütő", "Robotgép", "Citrusfacsaró"]}, {"topic": "Ismert könnyűzenei fesztiválok Magyarországon", "answers": ["Sziget Fesztivál", "VOLT Fesztivál", "Balaton Sound", "EFOTT", "FEZEN", "Campus Fesztivál", "Strand Fesztivál", "Gyűjtögető Fesztivál", "B My Lake", "Ozora Fesztivál"]}, {"topic": "Piros-fehér-zöld magyaros sportmezek", "answers": ["Válogatott focimez", "Kézilabda válogatott mez", "Vízilabda válogatott sapka", "Olimpiai csapat mez", "Kajak-kenu válogatott mez", "Kosárlabda válogatott mez", "Röplabda válogatott mez", "Birkózó válogatott mez", "Vívó válogatott mez", "Atlétika válogatott mez"]}, {"topic": "Ismert gyorséttermi desszertek", "answers": ["McFlurry", "Sundae", "Apple pie", "Donut", "Milkshake", "Churros", "Muffin", "Palacsinta", "Fánk", "Csokis kekszes fagyi"]}, {"topic": "Iskolai tanórai eszközök digitálisan", "answers": ["Interaktív tábla", "Projektor", "Tablet", "Laptop", "Okostelefon", "E-napló", "Prezentáció", "Online teszt", "Digitális tananyag", "Videó"]}, {"topic": "Ismert gyorséttermi menüelemek", "answers": ["Sajtburger", "Chicken nuggets", "Sült krumpli", "Milkshake", "Wrap", "Csirkeszárny", "Onion ring", "Kóla", "McFlurry", "Saláta menü"]}, {"topic": "Reggeli üdítőital-ízek", "answers": ["Narancs", "Alma", "Multivitamin", "Ananász", "Barack", "Citrom", "Mangó", "Áfonya", "Grapefruit", "Szőlő"]}, {"topic": "Iskolai osztálykirándulás úti céljai belföldön", "answers": ["Balaton", "Tihany", "Hollókő", "Eger", "Visegrád", "Aggteleki-barlang", "Hortobágy", "Szentendre", "Pécs", "Sopron"]}, {"topic": "Ismert társasági/party kártyajátékok", "answers": ["UNO", "Activity kártyák", "Dixit", "Taboo", "Coyote", "Sztereotípiák", "Fekete Macska", "Snapszer", "Ulti", "Nyerő páros"]}, {"topic": "Konyhai befőzéshez szükséges eszközök", "answers": ["Befőttesüveg", "Gumigyűrű", "Cukor", "Ecet", "Fűszerek", "Fazék", "Merőkanál", "Tölcsér", "Címke", "Sterilizáló edény"]}, {"topic": "Iskolai kézműves anyagok", "answers": ["Színes papír", "Ragasztó", "Olló", "Gyurma", "Filctoll", "Zsinór", "Karton", "Csillámpor", "Pom-pom", "Festék"]}, {"topic": "Konyhai befőttek/lekvárok", "answers": ["Baracklekvár", "Meggybefőtt", "Szilvalekvár", "Almabefőtt", "Eperlekvár", "Körtebefőtt", "Ribizlilekvár", "Kajszibarack-befőtt", "Csemegeuborka", "Paradicsomlekvár"]}, {"topic": "Iskolai reggel előtti otthoni rutin", "answers": ["Ébresztőóra", "Reggeli", "Fogmosás", "Öltözés", "Táska összekészítése", "Cipő felvétele", "Fésülködés", "Uzsonna becsomagolása", "Búcsúzás", "Indulás"]}, {"topic": "Grillezett ételek", "answers": ["Grillcsirke", "Kolbász", "Hamburger", "Sült kukorica", "Zöldségnyárs", "Steak", "Halfilé", "Sajttál", "Padlizsán", "Paprika"]}, {"topic": "Iskolai tornaórai felszerelés", "answers": ["Tornacipő", "Póló", "Rövidnadrág", "Melegítő", "Zokni", "Hajgumi", "Sportszatyor", "Vizes palack", "Frottír törölköző", "Edzőcipő"]}, {"topic": "Kerti bogyós gyümölcsök", "answers": ["Eper", "Málna", "Szeder", "Ribizli", "Egres", "Áfonya", "Bodza", "Homoktövis", "Berkenye", "Fekete ribizli"]}, {"topic": "Iskolai közösségi terek", "answers": ["Aula", "Tornaterem", "Ebédlő", "Könyvtár", "Folyosó", "Udvar", "Büfé", "Öltöző", "Tanári szoba", "Igazgatói iroda"]}, {"topic": "Nyári strandjátékok", "answers": ["Röplabda", "Frizbi", "Homokvárépítés", "Vízipisztolyozás", "Labdázás", "Tollaslabda", "Úszóverseny", "Kavicsdobálás", "Napozás", "Búvárkodás"]}, {"topic": "Ismert filctoll-/festékkészletek színei", "answers": ["Piros", "Kék", "Zöld", "Sárga", "Narancssárga", "Lila", "Fekete", "Barna", "Rózsaszín", "Türkiz"]}], "narancs": [{"topic": "Magyar találmányok", "answers": ["Golyóstoll", "Rubik-kocka", "Villamosmotor", "Telefonközpont", "Hologram", "Kviklum(karburátor)", "C-vitamin izolálása", "Dinamó", "Szódásszifon", "Porlasztó"]}, {"topic": "Magyar királyok", "answers": ["I. István", "Szent László", "Könyves Kálmán", "III. Béla", "IV. Béla", "Károly Róbert", "Nagy Lajos", "Zsigmond", "Hunyadi Mátyás", "II. Lajos"]}, {"topic": "Nobel-díjas magyarok", "answers": ["Szent-Györgyi Albert", "Wigner Jenő", "Békésy György", "Hevesy György", "Gábor Dénes", "Harsányi János", "Oláh György", "Polányi János", "Zsigmondy Richárd", "Kertész Imre"]}, {"topic": "Vegyjelek", "answers": ["H", "O", "Na", "Fe", "Au", "Ag", "Cu", "C", "N", "Ca"]}, {"topic": "EU-tagállamok", "answers": ["Franciaország", "Németország", "Olaszország", "Spanyolország", "Lengyelország", "Magyarország", "Ausztria", "Görögország", "Portugália", "Svédország"]}, {"topic": "Naprendszer égitestei", "answers": ["Merkúr", "Vénusz", "Föld", "Mars", "Jupiter", "Szaturnusz", "Uránusz", "Neptunusz", "Plútó", "Hold"]}, {"topic": "Világhíres történelmi építmények", "answers": ["Gízai piramisok", "Kínai nagy fal", "Petra", "Machu Picchu", "Colosseum", "Chichén Itzá", "Taj Mahal", "Krisztus-szobor (Rio de Janeiro)", "Angkor Wat", "Stonehenge"]}, {"topic": "Egyiptomi csapások", "answers": ["Vér", "Békák", "Tetvek", "Legyek", "Dögvész", "Fekélyek", "Jégeső", "Sáskák", "Sötétség", "Elsőszülöttek halála"]}, {"topic": "Görög istenek", "answers": ["Zeusz", "Héra", "Poszeidón", "Aphrodité", "Árész", "Athéné", "Apollón", "Artemisz", "Hermész", "Hádész"]}, {"topic": "Shakespeare-drámák", "answers": ["Hamlet", "Macbeth", "Othello", "Romeó és Júlia", "Lear király", "Szentivánéji álom", "Vízkereszt", "A velencei kalmár", "Julius Caesar", "A vihar"]}, {"topic": "Nobel-békedíjasok", "answers": ["Nelson Mandela", "Barack Obama", "Malala Youszafzai", "Dalai Láma", "Desmond Tutu", "Kofi Annan", "Kissinger Henry", "Willy Brandt", "Al Gore", "Aung Szan Szu Csí"]}, {"topic": "Híres fizikusok", "answers": ["Albert Einstein", "Isaac Newton", "Niels Bohr", "Marie Curie", "Stephen Hawking", "Richard Feynman", "Max Planck", "Werner Heisenberg", "Galileo Galilei", "Erwin Schrödinger"]}, {"topic": "Elemek a periódusos rendszerben", "answers": ["Hidrogén", "Hélium", "Lítium", "Oxigén", "Nitrogén", "Szén", "Vas", "Arany", "Ezüst", "Urán"]}, {"topic": "Reneszánsz festők", "answers": ["Leonardo da Vinci", "Michelangelo", "Raffaello", "Botticelli", "Tiziano", "Donatello", "Giotto", "Correggio", "Masaccio", "Tintoretto"]}, {"topic": "Világháborús csaták", "answers": ["Sztálingrádi csata", "Verduni csata", "Somme-i csata", "Midway-i csata", "El-alameini csata", "Normandiai partraszállás", "Kurszki csata", "Berlin ostroma", "Pearl Harbor", "Waterloo"]}, {"topic": "Nemzetközi fővárosok", "answers": ["Canberra", "Ottawa", "Bern", "Brazíliaváros", "Abuja", "Wellington", "Astana", "Pretoria", "Naypyidaw", "Sucre"]}, {"topic": "Filozófusok", "answers": ["Szókratész", "Platón", "Arisztotelész", "Immanuel Kant", "Friedrich Nietzsche", "Descartes", "John Locke", "David Hume", "Hegel", "Kierkegaard"]}, {"topic": "Klasszikus zeneszerzők", "answers": ["Bach", "Mozart", "Beethoven", "Chopin", "Liszt Ferenc", "Brahms", "Csajkovszkij", "Vivaldi", "Schubert", "Handel"]}, {"topic": "Magyar Nobel-díjas tudósok (irodalom nélkül)", "answers": ["Szent-Györgyi Albert", "Wigner Jenő", "Békésy György", "Hevesy György", "Gábor Dénes", "Harsányi János", "Oláh György", "Polányi János", "Zsigmondy Richárd", "Lénárd Fülöp"]}, {"topic": "Emberi test csontjai", "answers": ["Combcsont", "Sípcsont", "Szárkapocscsont", "Medencecsont", "Bordák", "Koponya", "Gerinc", "Lapocka", "Kulcscsont", "Könyökcsont"]}, {"topic": "Világ leghosszabb folyói", "answers": ["Nílus", "Amazonas", "Jangce", "Mississippi", "Jenyiszej", "Sárga-folyó", "Ob", "Kongó", "Amur", "Léna"]}, {"topic": "Ismert sakkozók", "answers": ["Garri Kaszparov", "Bobby Fischer", "Magnus Carlsen", "Anatolij Karpov", "Mihail Botvinnik", "José Raúl Capablanca", "Viswanathan Anand", "Mihail Tal", "Polgár Judit", "Alekszandr Aljechin"]}, {"topic": "Vulkánikus hegyek", "answers": ["Vezúv", "Etna", "Fudzsi", "Kilimandzsáró", "Krakatau", "Sztromboli", "Mauna Loa", "Popocatépetl", "Cotopaxi", "Pinatubo"]}, {"topic": "Nemzetközi valuták", "answers": ["Dollár", "Euró", "Font", "Jen", "Frank", "Rubel", "Jüan", "Zloty", "Korona", "Forint"]}, {"topic": "Csillagképek", "answers": ["Nagy Medve", "Kis Medve", "Orion", "Kassziopeia", "Bika", "Oroszlán", "Skorpió", "Ikrek", "Sárkány", "Herkules"]}, {"topic": "Középkori magyar csaták", "answers": ["Muhi csata", "Mohácsi csata", "Nándorfehérvári diadal", "Pozsonyi csata", "Augsburgi csata", "Várnai csata", "Szávaszentdemeteri csata", "Kenyérmezei csata", "Rigómezei csata", "Nikápolyi csata"]}, {"topic": "Írók, akik Nobel-díjat kaptak", "answers": ["Ernest Hemingway", "Gabriel García Márquez", "Toni Morrison", "Kazuo Ishiguro", "Kertész Imre", "Albert Camus", "Winston Churchill", "Rudyard Kipling", "Doris Lessing", "Bob Dylan"]}, {"topic": "Emberi belső szervek", "answers": ["Szív", "Tüdő", "Máj", "Vese", "Gyomor", "Hasnyálmirigy", "Lép", "Vékonybél", "Vastagbél", "Agy"]}, {"topic": "Ismert biológusok", "answers": ["Charles Darwin", "Gregor Mendel", "Louis Pasteur", "Alexander Fleming", "Rosalind Franklin", "James Watson", "Francis Crick", "Jane Goodall", "Carl Linné", "Ernst Haeckel"]}, {"topic": "Ismert festmények", "answers": ["Mona Lisa", "Csillagos éj", "A vacsora", "Guernica", "Az utolsó vacsora", "Az éjjeli őrjárat", "A sikoly", "Ádám teremtése", "Vénusz születése", "Nagy hullám Kanagavánál"]}, {"topic": "Nemzetközi szervezetek rövidítései", "answers": ["ENSZ", "NATO", "EU", "WHO", "UNESCO", "UNICEF", "OPEC", "IMF", "WTO", "Interpol"]}, {"topic": "Törzsi/népvándorlás kori népek", "answers": ["Hunok", "Avarok", "Gótok", "Vandálok", "Longobárdok", "Frankok", "Szlávok", "Besenyők", "Kunok", "Kazárok"]}, {"topic": "Trianon után elcsatolt magyar városok", "answers": ["Kolozsvár", "Kassa", "Pozsony", "Szabadka", "Nagyvárad", "Marosvásárhely", "Ungvár", "Arad", "Temesvár", "Munkács"]}, {"topic": "Emberi test mirigyei", "answers": ["Pajzsmirigy", "Hasnyálmirigy", "Mellékvese", "Agyalapi mirigy", "Nyálmirigy", "Verejtékmirigy", "Faggyúmirigy", "Tobozmirigy", "Mellékpajzsmirigy", "Csecsemőmirigy"]}, {"topic": "Ismert matematikai tételek/nevek", "answers": ["Pitagorasz-tétel", "Thalész-tétel", "Fermat-sejtés", "Euler-formula", "Gauss-eloszlás", "Newton–Leibniz-formula", "Bayes-tétel", "Fibonacci-sorozat", "Gödel-tétel", "Riemann-sejtés"]}, {"topic": "Ismert tengerszorosok", "answers": ["Gibraltári-szoros", "Boszporusz", "Dardanellák", "Malaka-szoros", "Bering-szoros", "Hormuzi-szoros", "Dover-szoros", "Magellán-szoros", "Davis-szoros", "Skagerrak"]}, {"topic": "Középkori lovagrendek", "answers": ["Templomos lovagrend", "Johannita lovagrend", "Német lovagrend", "Szent Lázár-rend", "Szent Sír Lovagrendje", "Kalatrava-rend", "Alcántara-rend", "Szent György-rend", "Aviz-rend", "Szent János-rend"]}, {"topic": "Filmrendezők", "answers": ["Steven Spielberg", "Quentin Tarantino", "Christopher Nolan", "Martin Scorsese", "Alfred Hitchcock", "Stanley Kubrick", "James Cameron", "Tim Burton", "Ridley Scott", "David Fincher"]}, {"topic": "Ismert egyetemek", "answers": ["Harvard", "Oxford", "Cambridge", "Yale", "Stanford", "MIT", "Princeton", "ELTE", "Sorbonne", "Berkeley"]}, {"topic": "Ókori római császárok", "answers": ["Augustus", "Nero", "Traianus", "Hadrianus", "Marcus Aurelius", "Caligula", "Claudius", "Vespasianus", "Diocletianus", "Constantinus"]}, {"topic": "Ismert vegyészek", "answers": ["Antoine Lavoisier", "Dmitrij Mengyelejev", "Marie Curie", "Linus Pauling", "Robert Boyle", "John Dalton", "Amedeo Avogadro", "Justus von Liebig", "Fritz Haber", "Alfred Nobel"]}, {"topic": "Neurológiai/agyi részek", "answers": ["Agykéreg", "Kisagy", "Nyúltvelő", "Halántéklebeny", "Homloklebeny", "Hippocampus", "Amygdala", "Thalamus", "Hipotalamusz", "Agytörzs"]}, {"topic": "Világirodalmi eposzok", "answers": ["Iliász", "Odüsszeia", "Aeneis", "Nibelung-ének", "Kalevala", "Gilgames-eposz", "Beowulf", "Mahábhárata", "Ramajána", "Isteni színjáték"]}, {"topic": "Habsburg Birodalom tartományai", "answers": ["Ausztria", "Magyarország", "Csehország", "Horvátország", "Szlovénia", "Galícia", "Bukovina", "Erdély", "Tirol", "Lombardia-Velence"]}, {"topic": "Ismert közgazdászok", "answers": ["Adam Smith", "John Maynard Keynes", "Milton Friedman", "Karl Marx", "David Ricardo", "Friedrich Hayek", "Paul Samuelson", "Joseph Schumpeter", "Amartya Sen", "Thomas Piketty"]}, {"topic": "Naprendszer holdjai", "answers": ["Hold", "Phobos", "Deimos", "Io", "Europa", "Ganymedes", "Callisto", "Titán", "Triton", "Charon"]}, {"topic": "Ismert szobrászok", "answers": ["Michelangelo", "Auguste Rodin", "Donatello", "Gian Lorenzo Bernini", "Antonio Canova", "Constantin Brâncuși", "Henry Moore", "Praxitelész", "Phidiász", "Alberto Giacometti"]}, {"topic": "Genetikai fogalmak", "answers": ["DNS", "RNS", "Kromoszóma", "Gén", "Mutáció", "Allél", "Genom", "Fenotípus", "Genotípus", "Rekombináció"]}, {"topic": "Középkori keresztes hadjáratok", "answers": ["Első keresztes hadjárat", "Második keresztes hadjárat", "Harmadik keresztes hadjárat", "Negyedik keresztes hadjárat", "Gyermekek keresztes hadjárata", "Ötödik keresztes hadjárat", "Hatodik keresztes hadjárat", "Hetedik keresztes hadjárat", "Nyolcadik keresztes hadjárat", "Albigens keresztes hadjárat"]}, {"topic": "Ismert csillagászok", "answers": ["Kopernikusz", "Galilei", "Kepler", "Newton", "Tycho Brahe", "Edwin Hubble", "Carl Sagan", "Stephen Hawking", "Halley", "Ptolemaiosz"]}, {"topic": "Ismert operák", "answers": ["Carmen", "Aida", "La Traviata", "A varázsfuvola", "Turandot", "Nabucco", "Tosca", "Rigoletto", "Don Giovanni", "A sevillai borbély"]}, {"topic": "Ismert oltások/vakcinák", "answers": ["Kanyaró elleni oltás", "Rubeola elleni oltás", "Mumpsz elleni oltás", "Diftéria elleni oltás", "Tetanusz elleni oltás", "Szamárköhögés elleni oltás", "Gyermekbénulás elleni oltás", "Hepatitis B elleni oltás", "BCG-oltás (tuberkulózis)", "HPV elleni oltás"]}, {"topic": "Nagy sivatagok", "answers": ["Szahara", "Gobi", "Kalahári", "Atacama", "Arab-sivatag", "Namib", "Thár-sivatag", "Mojave", "Szonorai-sivatag", "Antarktiszi sivatag"]}, {"topic": "Ismert diktátorok a történelemben", "answers": ["Adolf Hitler", "Joszif Sztálin", "Benito Mussolini", "Mao Ce-tung", "Pol Pot", "Kim Ir Szen", "Idi Amin", "Francisco Franco", "Nicolae Ceaușescu", "Szaddám Huszein"]}, {"topic": "Kémiai mennyiségek/mértékegységek", "answers": ["Mól", "Joule", "Kelvin", "Pascal", "Newton", "Watt", "Coulomb", "Amper", "Volt", "Ohm"]}, {"topic": "Ismert ókori görög tudósok", "answers": ["Arkhimédész", "Pitagorasz", "Euklidész", "Hérodotosz", "Hippokratész", "Arisztotelész", "Platón", "Thálész", "Démokritosz", "Ptolemaiosz"]}, {"topic": "Ismert felfedezők", "answers": ["Kolumbusz Kristóf", "Vasco da Gama", "Magellán", "Marco Polo", "James Cook", "Amundsen", "Livingstone", "Vespucci", "Cortés", "Pizarro"]}, {"topic": "Emberi izmok", "answers": ["Bicepsz", "Tricepsz", "Deltaizom", "Négyfejű combizom", "Vádliizom", "Hasizom", "Széles hátizom", "Nagy mellizom", "Farizom", "Trapézizom"]}, {"topic": "Nagy tavak a világon", "answers": ["Kaszpi-tenger", "Felső-tó", "Viktória-tó", "Huron-tó", "Michigan-tó", "Tanganyika-tó", "Bajkál-tó", "Nagy Medve-tó", "Malawi-tó", "Erie-tó"]}, {"topic": "Magyar irodalmi Kossuth-díjas kortárs írók", "answers": ["Kertész Imre", "Esterházy Péter", "Nádas Péter", "Krasznahorkai László", "Spiró György", "Márai Sándor", "Konrád György", "Bartis Attila", "Ottlik Géza", "Szabó Magda"]}, {"topic": "Világűrbe küldött első dolgok", "answers": ["Szputnyik–1", "Lajka kutya", "Jurij Gagarin", "Valentyina Tyereskova", "Apollo–11", "Hubble űrteleszkóp", "Vojager–1", "Nemzetközi Űrállomás", "Cassini szonda", "New Horizons szonda"]}, {"topic": "Reformáció alakjai", "answers": ["Luther Márton", "Kálvin János", "Zwingli Ulrich", "Melanchton Fülöp", "Húsz János", "Kálmáncsehi Sánta Márton", "Méliusz Juhász Péter", "Sztárai Mihály", "Dévai Bíró Mátyás", "Bullinger Henrik"]}, {"topic": "Történelmi korszakok", "answers": ["Őskor", "Ókor", "Középkor", "Reneszánsz", "Barokk kor", "Felvilágosodás kora", "Ipari forradalom kora", "Modern kor", "Posztmodern kor", "Információs kor"]}, {"topic": "Ismert díjak a filmiparban", "answers": ["Oscar-díj", "Golden Globe-díj", "BAFTA-díj", "Cannes-i Arany Pálma", "Velencei Arany Oroszlán", "Berlini Arany Medve", "Cézár-díj", "Emmy-díj", "Screen Actors Guild-díj", "Independent Spirit-díj"]}, {"topic": "Kémiai laboratóriumi eszközök", "answers": ["Kémcső", "Főzőpohár", "Lombik", "Büretta", "Pipetta", "Bunsen-égő", "Mérőhenger", "Tölcsér", "Csipesz", "Óraüveg"]}, {"topic": "Ismert matematikusok", "answers": ["Pitagorasz", "Euklidész", "Newton", "Leibniz", "Gauss", "Euler", "Fibonacci", "Descartes", "Riemann", "Turing"]}, {"topic": "Nemzetközi békeszerződések", "answers": ["Versailles-i békeszerződés", "Trianoni békeszerződés", "Vesztfáliai béke", "Párizsi béke", "Bécsi kongresszus", "Camp David-i egyezmény", "Osló-i egyezmény", "Yalta-i konferencia", "Potsdam-i konferencia", "Münchheni egyezmény"]}, {"topic": "Az emberi szem részei", "answers": ["Szaruhártya", "Ínhártya", "Szivárványhártya", "Pupilla", "Lencse", "Retina", "Érhártya", "Üvegtest", "Látóideg", "Szemhéj"]}, {"topic": "Ókori egyiptomi fáraók", "answers": ["Tutanhamon", "II. Ramszesz", "Hatsepszut", "Ehnaton", "Kheopsz", "Kleopátra", "Dzsószer", "I. Szeti", "Amenhotep III", "Thotmesz III"]}, {"topic": "Ismert fizikai állandók", "answers": ["Fénysebesség", "Gravitációs állandó", "Planck-állandó", "Avogadro-szám", "Boltzmann-állandó", "Elemi töltés", "Gázállandó", "Coulomb-állandó", "Vákuum permittivitása", "Stefan–Boltzmann-állandó"]}, {"topic": "Zenei műfajok", "answers": ["Klasszikus", "Jazz", "Blues", "Rock", "Pop", "Hiphop", "Elektronikus", "Country", "Reggae", "Metál"]}, {"topic": "Középkori magyar várak", "answers": ["Visegrádi vár", "Egri vár", "Diósgyőri vár", "Sümegi vár", "Siklósi vár", "Boldogkői vár", "Szigligeti vár", "Füzéri vár", "Sárospataki vár", "Regéci vár"]}, {"topic": "Emberi anatómiai rendszerek", "answers": ["Keringési rendszer", "Légzőrendszer", "Emésztőrendszer", "Idegrendszer", "Mozgásrendszer", "Kiválasztó rendszer", "Endokrin rendszer", "Immunrendszer", "Szaporítórendszer", "Nyirokrendszer"]}, {"topic": "Ismert balett-táncosok/koreográfusok", "answers": ["Rudolf Nurejev", "Mihail Barisnyikov", "Anna Pavlova", "Vaszlav Nizsinszkij", "George Balanchine", "Margot Fonteyn", "Szergej Gyagilev", "Marius Petipa", "Pina Bausch", "Carla Fracci"]}, {"topic": "Középkori Európa uralkodóházai", "answers": ["Habsburg-ház", "Bourbon-ház", "Windsor-ház", "Romanov-ház", "Hohenzollern-ház", "Plantagenet-ház", "Tudor-ház", "Valois-ház", "Wittelsbach-ház", "Anjou-ház"]}, {"topic": "Ismert vulkánkitörések a történelemben", "answers": ["Vezúv (Kr.u. 79)", "Krakatau (1883)", "Tambora (1815)", "Pinatubo (1991)", "Szent Ilona-hegy (1980)", "Etna (folyamatos)", "Eyjafjallajökull (2010)", "Pompeji pusztulása", "Thera-kitörés", "Mount Pelée (1902)"]}, {"topic": "Nemzetközi kártyajátékok", "answers": ["Póker", "Bridzs", "Black Jack", "Baccarat", "Solitaire", "Rummy", "Whist", "Skat", "Canasta", "Cribbage"]}, {"topic": "Ismert hadvezérek a történelemben", "answers": ["Napóleon", "Hannibal", "Julius Caesar", "Nagy Sándor", "Szulejmán", "Zrínyi Miklós", "Hunyadi János", "Erwin Rommel", "Wellington hercege", "Nelson admirális"]}, {"topic": "Középkori egyetemek alapítása", "answers": ["Bolognai Egyetem", "Oxfordi Egyetem", "Párizsi Egyetem", "Cambridge-i Egyetem", "Salamancai Egyetem", "Prágai Károly Egyetem", "Krakkói Egyetem", "Bécsi Egyetem", "Heidelbergi Egyetem", "Pécsi Egyetem"]}, {"topic": "Ismert csaták az ókorban", "answers": ["Marathóni csata", "Thermopülai csata", "Szalamiszi csata", "Cannae-i csata", "Actiumi csata", "Gaugamélai csata", "Zamai csata", "Alesiai ostrom", "Pun háborúk csatái", "Cynoscephalae-i csata"]}, {"topic": "Kémiai savak", "answers": ["Sósav", "Kénsav", "Salétromsav", "Ecetsav", "Szénsav", "Foszforsav", "Citromsav", "Hangyasav", "Bórsav", "Hidrogén-fluorid"]}, {"topic": "Ismert regényírók klasszikusai", "answers": ["Lev Tolsztoj", "Fjodor Dosztojevszkij", "Charles Dickens", "Jane Austen", "Victor Hugo", "Gustave Flaubert", "Franz Kafka", "Thomas Mann", "James Joyce", "Marcel Proust"]}, {"topic": "Ipari forradalom találmányai", "answers": ["Gőzgép", "Szövőgép", "Vasút", "Távíró", "Telefon", "Villanykörte", "Fényképezőgép", "Dinamó", "Robbanómotor", "Varrógép"]}, {"topic": "Antik olimpiai versenyszámok", "answers": ["Futás", "Ötpróba", "Birkózás", "Ökölvívás", "Pankráció", "Kocsihajtás", "Lovaglás", "Diszkoszvetés", "Gerelyhajítás", "Távolugrás"]}, {"topic": "Ismert paleontológiai leletek", "answers": ["Lucy (Australopithecus)", "Tyrannosaurus rex csontváz", "Archaeopteryx", "Neander-völgyi ember", "Homo naledi", "Ötzi (jégember)", "Diplodocus", "Velociraptor lelet", "Triceratops koponya", "Homo floresiensis"]}, {"topic": "Ismert orvosi szakterületek", "answers": ["Kardiológia", "Neurológia", "Ortopédia", "Onkológia", "Dermatológia", "Pszichiátria", "Urológia", "Szemészet", "Fogászat", "Gasztroenterológia"]}, {"topic": "Ismert vitaminok", "answers": ["A-vitamin", "B1-vitamin", "B2-vitamin", "B6-vitamin", "B12-vitamin", "C-vitamin", "D-vitamin", "E-vitamin", "K-vitamin", "Folsav"]}, {"topic": "Híres hajók a történelemben", "answers": ["Santa María", "Mayflower", "HMS Beagle", "HMS Endeavour", "Victoria (Magellán hajója)", "Golden Hind", "Titanic", "Queen Mary", "Bounty", "Niña"]}, {"topic": "Ismert csillagászati műholdak/szondák", "answers": ["Hubble", "Kepler-űrtávcső", "Voyager-1", "Voyager-2", "Cassini", "New Horizons", "James Webb", "Spitzer", "Chandra", "Gaia"]}, {"topic": "Reneszánsz humanisták", "answers": ["Erasmus", "Thomas More", "Petrarca", "Boccaccio", "Pico della Mirandola", "Janus Pannonius", "Vitéz János", "Marsilio Ficino", "Machiavelli", "Coluccio Salutati"]}, {"topic": "Ismert genetikai betegségek", "answers": ["Down-szindróma", "Cisztás fibrózis", "Hemofília", "Sarlósejtes vérszegénység", "Huntington-kór", "Turner-szindróma", "Klinefelter-szindróma", "Phenilketonúria", "Duchenne izomdisztrófia", "Tay-Sachs-betegség"]}, {"topic": "Ókori kínai dinasztiák", "answers": ["Han-dinasztia", "Csin-dinasztia", "Tang-dinasztia", "Szung-dinasztia", "Ming-dinasztia", "Csing-dinasztia", "Jüan-dinasztia", "Sui-dinasztia", "Zhou-dinasztia", "Sang-dinasztia"]}, {"topic": "Ismert asztrofizikai jelenségek", "answers": ["Fekete lyuk", "Szupernóva", "Neutroncsillag", "Vörös óriás", "Fehér törpe", "Kvazár", "Gravitációs hullám", "Ősrobbanás", "Sötét anyag", "Kozmikus mikrohullámú háttérsugárzás"]}, {"topic": "Bizánci császárok", "answers": ["I. Justinianus", "I. Konstantin", "II. Basileios", "Iréné császárnő", "XI. Konstantin", "Heraclius", "III. Leó", "I. Alexiosz Komnénosz", "I. Theodosius", "Foca"]}, {"topic": "Ismert felvilágosodás kori gondolkodók", "answers": ["Voltaire", "Jean-Jacques Rousseau", "Montesquieu", "Denis Diderot", "John Locke", "David Hume", "Immanuel Kant", "Adam Smith", "Benjamin Franklin", "Thomas Jefferson"]}, {"topic": "Nagy csatornák a világon", "answers": ["Panama-csatorna", "Szuezi-csatorna", "Kieli-csatorna", "Korinthoszi-csatorna", "Erie-csatorna", "Volga–Don-csatorna", "Grand Canal (Kína)", "Göta-csatorna", "Rajna–Majna–Duna-csatorna", "Manchesteri-csatorna"]}, {"topic": "Ismert festészeti irányzatok", "answers": ["Reneszánsz", "Barokk", "Impresszionizmus", "Expresszionizmus", "Kubizmus", "Szürrealizmus", "Realizmus", "Pop art", "Absztrakt expresszionizmus", "Fauvizmus"]}, {"topic": "Középkori magyar törvénykönyvek/oklevelek", "answers": ["Aranybulla", "Tripartitum", "Corpus Juris Hungarici", "Werbőczy törvénykönyve", "1222-es kiváltságlevél", "Pozsonyi országgyűlési határozatok", "Ősiség törvénye", "Compactata", "1462-es törvények", "1526 utáni törvények"]}, {"topic": "Ismert antropológiai/emberfajta-fogalmak (evolúció)", "answers": ["Homo sapiens", "Homo erectus", "Homo habilis", "Homo neanderthalensis", "Australopithecus", "Homo floresiensis", "Homo naledi", "Homo heidelbergensis", "Paranthropus", "Ardipithecus"]}, {"topic": "Nemzetközi sportversenyek", "answers": ["Olimpiai játékok", "Labdarúgó-világbajnokság", "Forma-1 világbajnokság", "Wimbledon", "Tour de France", "Ryder Kupa", "Super Bowl", "Rögbi világkupa", "Vb-torna úszásban", "Atlétikai világbajnokság"]}, {"topic": "Tom Hanks filmjei", "answers": ["Forrest Gump", "Philadelphia", "Big", "Apollo 13", "Számkivetett", "A zöld mérföld", "A Da Vinci-kód", "Kapj el, ha tudsz", "Sully", "Toy Story"]}, {"topic": "Steven Spielberg filmjei", "answers": ["Cápa", "E.T. – a földönkívüli", "Az elveszett frigyláda fosztogatói", "Jurassic Park", "Schindler listája", "Ryan közlegény megmentése", "Minority Report", "A Terminál", "Ready Player One", "Nyugati oldali történet"]}, {"topic": "Meryl Streep filmjei", "answers": ["Kramer kontra Kramer", "Sophie választása", "Az ördög Pradát visel", "Mamma Mia!", "A vaslady", "Julie & Julia", "Kétely", "A posta", "Kis nők", "Ne nézz fel!"]}, {"topic": "Leonardo DiCaprio filmjei", "answers": ["Titanic", "A viharsziget", "Django elszabadul", "A Wall Street farkasa", "Aviátor", "Origó (Inception)", "Boldogságra vágyva", "A vadász visszatér (The Revenant)", "Volt egyszer egy Hollywood", "Gengszterkorzó"]}, {"topic": "Országok, amik \"M\"-mel kezdődnek", "answers": ["Magyarország", "Mexikó", "Marokkó", "Malajzia", "Málta", "Mongólia", "Mozambik", "Monaco", "Moldova", "Myanmar"]}, {"topic": "Országok, amik \"A\"-val kezdődnek", "answers": ["Ausztria", "Ausztrália", "Argentína", "Albánia", "Algéria", "Amerikai Egyesült Államok", "Angola", "Azerbajdzsán", "Andorra", "Afganisztán"]}, {"topic": "Országok, amik \"B\"-vel kezdődnek", "answers": ["Belgium", "Brazília", "Bulgária", "Banglades", "Bolívia", "Botswana", "Bahrein", "Belize", "Benin", "Bhután"]}, {"topic": "Nyári olimpiák helyszínei", "answers": ["Athén", "Párizs", "London", "Berlin", "Tokió", "Mexikóváros", "Moszkva", "Los Angeles", "Szöul", "Sydney"]}, {"topic": "Budapesti M1-es metró megállói", "answers": ["Vörösmarty tér", "Deák Ferenc tér", "Bajcsy-Zsilinszky út", "Opera", "Oktogon", "Vörösmarty utca", "Kodály körönd", "Hősök tere", "Széchenyi fürdő", "Mexikói út"]}, {"topic": "Budapesti M2-es metró megállói", "answers": ["Déli pályaudvar", "Széll Kálmán tér", "Kossuth Lajos tér", "Deák Ferenc tér", "Astoria", "Blaha Lujza tér", "Keleti pályaudvar", "Puskás Ferenc Stadion", "Pillangó utca", "Örs vezér tere"]}, {"topic": "Budapesti M4-es metró megállói", "answers": ["Kelenföld vasútállomás", "Bikás park", "Újbuda-központ", "Móricz Zsigmond körtér", "Szent Gellért tér", "Fővám tér", "Kálvin tér", "Rákóczi tér", "II. János Pál pápa tér", "Keleti pályaudvar"]}, {"topic": "Győri 13-as busz megállói", "answers": ["Marcalváros, Kovács Margit utca", "Vasvári Pál utca, kórház", "Tihanyi Árpád út, kórház", "Ipar utca, Volán-telep", "Mátyás király tér", "Budai út, Árkád üzletház", "Szent István út, Iparkamara", "Híd utca, Rába Quelle fürdő", "Olimpiai Sportpark", "Pinnyéd, Új sor"]}, {"topic": "Ismert magyar humoristák", "answers": ["Hadházi László", "Aranyosi Péter", "Kovács András Péter", "Litkai Gergely", "Dombóvári István", "Fábry Sándor", "Alföldi Róbert", "Bödőcs Tibor", "Beliczai Balázs", "Csonka András"]}, {"topic": "Ismert magyar színészek", "answers": ["Cserhalmi György", "Törőcsik Mari", "Bujtor István", "Szinetár Dóra", "Nagy Bandó András", "Kern András", "Reviczky Gábor", "Für Anikó", "Csákányi Eszter", "Mácsai Pál"]}, {"topic": "Ismert focisták (nemzetközi)", "answers": ["Lionel Messi", "Cristiano Ronaldo", "Neymar", "Kylian Mbappé", "Zinedine Zidane", "Diego Maradona", "Pelé", "Ronaldinho", "Luka Modrić", "Erling Haaland"]}, {"topic": "Ismert magyar focisták", "answers": ["Puskás Ferenc", "Hidegkuti Nándor", "Detári Lajos", "Szalai Ádám", "Dzsudzsák Balázs", "Gera Zoltán", "Király Gábor", "Böde Dániel", "Sallai Roland", "Szoboszlai Dominik"]}, {"topic": "Ismert magyar bulvárszereplők/celebek", "answers": ["Palvin Barbara", "Curtis", "Ördög Nóra", "Istenes Bence", "Marics Peti", "Tóth Gabi", "Berki Krisztián", "Meggyes Dávid", "Szente Vajk", "Majka"]}, {"topic": "Budapesti M3-as metró megállói", "answers": ["Újpest-Központ", "Gyöngyösi utca", "Lehel tér", "Nyugati pályaudvar", "Deák Ferenc tér", "Ferenciek tere", "Kálvin tér", "Nagyvárad tér", "Népliget", "Kőbánya-Kispest"]}, {"topic": "Quentin Tarantino filmjei", "answers": ["Ponyvaregény", "Kill Bill", "Reservoir Dogs – Kutyaszorítóban", "Django elszabadul", "Aljas nyolcas", "Becstelen brigantyk", "Once Upon a Time in Hollywood", "Jackie Brown", "Halálbiztos", "Kill Bill 2"]}, {"topic": "Christopher Nolan filmjei", "answers": ["Memento", "Batman – Kezdődik", "A sötét lovag", "Origó (Inception)", "Interstellar", "Dunkirk", "Tenet", "Oppenheimer", "Prestige", "A sötét lovag – Felemelkedés"]}, {"topic": "Szabó István filmjei", "answers": ["Apa", "Szerelmesfilm", "Tűzoltó utca 25.", "Bizalom", "Mephisto", "Redl ezredes", "Hanussen", "Édes Emma, drága Böske", "A napfény íze", "Rokonok"]}, {"topic": "Országok, amik \"K\"-val kezdődnek", "answers": ["Kanada", "Kína", "Kolumbia", "Kenya", "Kambodzsa", "Katar", "Kazahsztán", "Kuba", "Kirgizisztán", "Kuvait"]}, {"topic": "Országok, amik \"P\"-vel kezdődnek", "answers": ["Portugália", "Peru", "Pakisztán", "Panama", "Paraguay", "Fülöp-szigetek", "Palau", "Lengyelország", "Pápua Új-Guinea", "Palesztina"]}, {"topic": "Téli olimpiák helyszínei", "answers": ["Chamonix", "Sankt Moritz", "Innsbruck", "Grenoble", "Sapporo", "Lake Placid", "Calgary", "Albertville", "Lillehammer", "Torino"]}, {"topic": "Ismert Nobel-békedíjas szervezetek", "answers": ["Vöröskereszt", "Orvosok Határok Nélkül", "ENSZ Menekültügyi Főbiztossága", "Nemzetközi Munkaügyi Szervezet", "Amnesty International", "Európai Unió", "Nemzetközi Atomenergia Ügynökség", "Pugwash Mozgalom", "Nemzetközi Aknamentesítő Kampány", "Kvéker Bizottság"]}, {"topic": "Ismert festmények múzeumai", "answers": ["Louvre", "Uffizi Képtár", "Prado Múzeum", "Ermitázs", "Metropolitan Museum", "Szépművészeti Múzeum", "National Gallery (London)", "Vatikáni Múzeumok", "Reina Sofía", "Rijksmuseum"]}, {"topic": "Ismert magyar Kossuth-díjas írók", "answers": ["Márai Sándor", "Illyés Gyula", "Németh László", "Örkény István", "Nagy László", "Weöres Sándor", "Csoóri Sándor", "Nádas Péter", "Esterházy Péter", "Konrád György"]}, {"topic": "Ismert vulkánikus szigetek", "answers": ["Izland", "Szicília (Etna)", "Hawaii", "Santorini", "Réunion", "Kanári-szigetek", "Fülöp-szigetek (Pinatubo)", "Java", "Kamcsatka", "Húsvét-sziget"]}, {"topic": "Ismert kémiai Nobel-díjasok", "answers": ["Marie Curie", "Linus Pauling", "Ernest Rutherford", "Fritz Haber", "Dorothy Hodgkin", "Ahmed Zewail", "Oláh György", "Robert Curl", "Frederick Sanger", "Kary Mullis"]}, {"topic": "Ismert filozófiai fogalmak", "answers": ["Kategorikus imperatívusz", "Dialektika", "Egzisztencializmus", "Determinizmus", "Empirizmus", "Racionalizmus", "Utilitarizmus", "Nihilizmus", "Sztoicizmus", "Idealizmus"]}, {"topic": "Ismert csillagászati távcsövek", "answers": ["Hubble", "James Webb", "VLT (Very Large Telescope)", "Keck Obszervatórium", "Arecibo", "Chandra", "Spitzer", "Kepler", "Gran Telescopio Canarias", "Green Bank"]}, {"topic": "Ismert amerikai elnökök", "answers": ["George Washington", "Abraham Lincoln", "Franklin D. Roosevelt", "John F. Kennedy", "Richard Nixon", "Ronald Reagan", "Bill Clinton", "Barack Obama", "Donald Trump", "Joe Biden"]}, {"topic": "Ismert brit uralkodók", "answers": ["VIII. Henrik", "I. Erzsébet", "Viktória királynő", "II. Erzsébet", "III. Károly", "I. Jakab", "I. Károly", "II. György", "IV. György", "VII. Eduárd"]}, {"topic": "Ismert genetikai kutatók", "answers": ["James Watson", "Francis Crick", "Rosalind Franklin", "Gregor Mendel", "Craig Venter", "Jennifer Doudna", "Emmanuelle Charpentier", "Barbara McClintock", "Frederick Sanger", "Kary Mullis"]}, {"topic": "Ismert vírusok", "answers": ["Influenzavírus", "Koronavírus", "HIV", "Ebola-vírus", "Hepatitis-vírus", "Herpeszvírus", "HPV", "Rotavírus", "Kanyaróvírus", "Norovírus"]}, {"topic": "Ismert vegyipari alapanyagok", "answers": ["Etilén", "Metán", "Kén-dioxid", "Ammónia", "Nátrium-klorid", "Szén-dioxid", "Etanol", "Benzol", "Glicerin", "Aceton"]}, {"topic": "Ismert reneszánsz uralkodók/mecénások", "answers": ["Hunyadi Mátyás", "Medici Lőrinc", "X. Leó pápa", "II. Gyula pápa", "I. Ferenc francia király", "VIII. Henrik", "Miksa német-római császár", "Izabella d'Este", "Federico da Montefeltro", "Cosimo de' Medici"]}, {"topic": "Ismert asztronauták/űrhajósok", "answers": ["Jurij Gagarin", "Neil Armstrong", "Buzz Aldrin", "Valentyina Tyereskova", "Farkas Bertalan", "Yuri Malenchenko", "Chris Hadfield", "Sally Ride", "Scott Kelly", "Alekszej Leonov"]}, {"topic": "Ismert ókori kínai filozófusok", "answers": ["Konfuciusz", "Lao-ce", "Mengzi", "Mozi", "Han Fej-ce", "Hszun-ce", "Csuang-ce", "Szun-ce", "Tung Csung-su", "Le-ce"]}, {"topic": "Ismert immunológiai/orvosi fogalmak", "answers": ["Antitest", "Antigén", "Vakcina", "Limfocita", "Autoimmun betegség", "Allergia", "Gyulladás", "Immunitás", "Fehérvérsejt", "Citokin"]}, {"topic": "Ismert világítótornyok", "answers": ["Alexandriai világítótorony", "Eddystone-világítótorony", "Cape Hatteras", "Jeddah Light", "Genovai világítótorony", "Cordouan-világítótorony", "Longstone-világítótorony", "Fastnet Rock", "Bell Rock-világítótorony", "Cape Reinga-világítótorony"]}, {"topic": "Ismert festészeti technikák", "answers": ["Olajfestés", "Akvarell", "Freskó", "Tempera", "Pasztell", "Akril", "Guache", "Enkausztika", "Pointillizmus", "Kollázs"]}, {"topic": "Ismert Habsburg uralkodók", "answers": ["I. Ferenc József", "Mária Terézia", "II. József", "I. Ferdinánd", "I. Lipót", "VI. Károly", "I. Rudolf", "III. Károly", "IV. Károly", "I. Miksa"]}, {"topic": "Ismert csillagászati jelenségek az égen", "answers": ["Napfogyatkozás", "Holdfogyatkozás", "Meteorraj", "Sarki fény", "Üstökös", "Szuperhold", "Vénusz-átvonulás", "Nap gyűrűs fogyatkozása", "Hulló csillag", "Halo-jelenség"]}, {"topic": "Ismert nemzetközi sportdíjak", "answers": ["Aranylabda", "FIFA Legjobb Játékos", "Aranycipő", "Laureus-díj", "BBC Az Év Sportolója", "Heisman-trófea", "Vince Lombardi-trófea", "Stanley-kupa", "Davis-kupa", "Ryder-kupa"]}, {"topic": "Ismert vulkanológusok/geológusok", "answers": ["Alfred Wegener", "Charles Lyell", "James Hutton", "Haroun Tazieff", "Katia Krafft", "Maurice Krafft", "Charles Richter", "Beno Gutenberg", "Inge Lehmann", "Robert Decker"]}, {"topic": "Ismert reneszánsz építészek", "answers": ["Filippo Brunelleschi", "Leon Battista Alberti", "Donato Bramante", "Andrea Palladio", "Michelangelo", "Giulio Romano", "Baldassarre Peruzzi", "Antonio da Sangallo", "Jacopo Sansovino", "Raffaello"]}, {"topic": "Ismert vegyi elemek felfedezői", "answers": ["Marie Curie (rádium)", "Henry Cavendish (hidrogén)", "Joseph Priestley (oxigén)", "Humphry Davy (nátrium)", "Dmitrij Mengyelejev (rendszerezés)", "Antoine Lavoisier", "Carl Wilhelm Scheele", "Glenn Seaborg", "Martin Klaproth", "Daniel Rutherford (nitrogén)"]}, {"topic": "Ismert bizánci-kori épületek", "answers": ["Hagia Szophia", "Kariye Múzeum", "Szent Márk-székesegyház", "Ravennai mozaikok", "Mystras romvárosa", "Meteora kolostorai", "Daphni kolostor", "Nea Moni kolostor", "Chóra-templom", "Hosziosz Loukász kolostor"]}, {"topic": "Ismert biokémiai fogalmak", "answers": ["Enzim", "Fehérje", "Aminosav", "ATP", "Fotoszintézis", "Sejtlégzés", "Metabolizmus", "Hormonrendszer", "Lipid", "Szénhidrát"]}, {"topic": "Ismert csillagászati katalógusok", "answers": ["Messier-katalógus", "NGC-katalógus", "Hipparcos-katalógus", "Henry Draper-katalógus", "Bayer-jelölés", "Bright Star Catalogue", "Gaia-katalógus", "IC-katalógus", "Sloan Digital Sky Survey", "2MASS-katalógus"]}, {"topic": "Ismert magyar reneszánsz/humanista alkotók", "answers": ["Janus Pannonius", "Vitéz János", "Bonfini Antonio", "Balassi Bálint", "Heltai Gáspár", "Bornemisza Péter", "Sylvester János", "Werbőczy István", "Oláh Miklós", "Zsámboky János"]}, {"topic": "Ismert genetikai szűrővizsgálatok", "answers": ["Amniocentézis", "Combined teszt", "Triple teszt", "NIPT (nem invazív prenatális teszt)", "Chorionboholy-mintavétel", "Újszülöttkori szűrés", "Genetikai tanácsadás", "Karyotipizálás", "PCR-teszt", "Exomszekvenálás"]}, {"topic": "Ismert filozófiai iskolák a középkorban", "answers": ["Skolasztika", "Ágostonizmus", "Tomizmus", "Averroizmus", "Nominalizmus", "Realizmus (univerzálé-vita)", "Miszticizmus", "Ferences iskola", "Domonkos rendi iskola", "Neoplatonizmus"]}, {"topic": "Ismert dinoszaurusz-korszakok", "answers": ["Triász időszak", "Jura időszak", "Kréta időszak", "Perm időszak", "Karbon időszak", "Devon időszak", "Szilur időszak", "Ordovicium időszak", "Kambrium időszak", "Ediacara időszak"]}, {"topic": "Ismert magyar Trianon-történelmi fogalmak", "answers": ["Trianoni békeszerződés", "Utódállamok", "Elcsatolt területek", "Kisantant", "Revíziós mozgalom", "Nemzeti Összetartozás Napja", "Területi integritás", "Menekültkérdés 1920 után", "Antant-hatalmak", "Párizs környéki békék"]}, {"topic": "Ismert modern fizikai elméletek", "answers": ["Relativitáselmélet", "Kvantummechanika", "Húrelmélet", "Standard modell", "Nagy Egyesített Elmélet", "Kvantumelektrodinamika", "Szuperszimmetria", "Kozmológiai inflációs elmélet", "Kvantum-gravitáció", "Multiverzum-elmélet"]}, {"topic": "Ismert nemzetközi sakknagymesterek", "answers": ["Garri Kaszparov", "Magnus Carlsen", "Bobby Fischer", "Anatolij Karpov", "Vlagyimir Kramnyik", "Viswanathan Anand", "Hikaru Nakamura", "Ding Liren", "Fabiano Caruana", "Polgár Judit"]}, {"topic": "Ismert vegyi hadviselési egyezmények", "answers": ["Genfi Jegyzőkönyv", "Vegyifegyver-tilalmi Egyezmény", "Biológiai Fegyver Egyezmény", "Hágai Egyezmények", "Ottawa Egyezmény (taposóaknák)", "Non-proliferációs Egyezmény", "Chemical Weapons Convention", "Wassenaari Megállapodás", "START-szerződések", "Nukleáris Kísérleti Tilalmi Szerződés"]}, {"topic": "Ismert reneszánsz zeneszerzők", "answers": ["Josquin des Prez", "Palestrina", "Orlando di Lasso", "Thomas Tallis", "William Byrd", "Claudio Monteverdi", "Giovanni Gabrieli", "Tomás Luis de Victoria", "Guillaume Dufay", "Carlo Gesualdo"]}, {"topic": "Ismert csillagászati egységrendszerek", "answers": ["Fényév", "Csillagászati egység", "Parsec", "Naptömeg", "Földsugár", "Naprádiusz", "Vöröseltolódási érték (z)", "Magnitúdó", "Ekliptika-koordináta-rendszer", "Sziderikus év"]}, {"topic": "Ismert emberi civilizációk az ókorban", "answers": ["Mezopotámia", "Ókori Egyiptom", "Indus-völgyi civilizáció", "Ókori Kína", "Maja civilizáció", "Azték civilizáció", "Inka civilizáció", "Föníciaiak", "Minószi civilizáció", "Etruszkok"]}, {"topic": "Ismert klasszikus balettek", "answers": ["Hattyúk tava", "Diótörő", "Csipkerózsika", "Giselle", "Don Quijote", "Rómeó és Júlia", "A tűzmadár", "Coppélia", "Bajadér", "Spartacus"]}, {"topic": "Ismert kémiai laboratóriumi biztonsági jelek", "answers": ["Mérgező anyag jel", "Gyúlékony anyag jel", "Maró anyag jel", "Robbanásveszélyes jel", "Oxidáló anyag jel", "Környezetre veszélyes jel", "Sűrített gáz jel", "Egészségkárosító jel", "Biológiai veszély jel", "Radioaktív jel"]}, {"topic": "Ismert 20. századi diktatúra-ellenes mozgalmak", "answers": ["Szolidaritás (Lengyelország)", "Bársonyos forradalom", "Prágai tavasz", "1956-os forradalom", "Berlini fal ledöntése", "Fülöp-szigeteki EDSA-forradalom", "Dél-afrikai apartheid-ellenes mozgalom", "Chilei demokratizálódás", "Arab tavasz", "Kínai diáktüntetések 1989"]}, {"topic": "Ismert magyar reformkori politikusok", "answers": ["Széchenyi István", "Kossuth Lajos", "Deák Ferenc", "Batthyány Lajos", "Eötvös József", "Wesselényi Miklós", "Klauzál Gábor", "Szemere Bertalan", "Táncsics Mihály", "Görgei Artúr"]}, {"topic": "Ismert 20. századi absztrakt festők", "answers": ["Wassily Kandinsky", "Piet Mondrian", "Kazimir Malevics", "Jackson Pollock", "Mark Rothko", "Joan Miró", "Paul Klee", "Robert Delaunay", "Willem de Kooning", "Franz Kline"]}, {"topic": "Ismert biológiai osztályozási szintek", "answers": ["Ország (regnum)", "Törzs", "Osztály", "Rend", "Család", "Nemzetség", "Faj", "Altípus (domain)", "Altörzs", "Alfaj"]}, {"topic": "Ismert középkori magyar érsekségek/püspökségek", "answers": ["Esztergomi érsekség", "Kalocsai érsekség", "Egri püspökség", "Váci püspökség", "Pécsi püspökség", "Veszprémi püspökség", "Győri püspökség", "Csanádi püspökség", "Váradi püspökség", "Erdélyi püspökség"]}, {"topic": "Ismert modern szobrászati alkotások", "answers": ["Gondolkodó (Rodin)", "Csók (Rodin)", "Dávid (Michelangelo)", "Szabadság-szobor", "Kis hableány (Koppenhága)", "Mount Rushmore", "Angyal of the North", "Cloud Gate (Chicago)", "Christ the Redeemer", "Manneken Pis"]}, {"topic": "Ismert nemzetközi vöröskeresztes/segélyszervezetek", "answers": ["Vöröskereszt", "Vörösfélhold", "Orvosok Határok Nélkül", "UNICEF", "Oxfam", "Save the Children", "CARE International", "World Vision", "Caritas", "Máltai Szeretetszolgálat"]}, {"topic": "Ismert Nobel-díjas közgazdászok", "answers": ["Milton Friedman", "Paul Krugman", "Amartya Sen", "Joseph Stiglitz", "Friedrich Hayek", "Daniel Kahneman", "Robert Shiller", "Richard Thaler", "Esther Duflo", "Angus Deaton"]}, {"topic": "Ismert vegyi elemek csoportnevei (fémek)", "answers": ["Alkálifémek", "Alkáliföldfémek", "Átmenetifémek", "Lantanoidák", "Aktinoidák", "Félfémek", "Poszttranzíciós fémek", "Nemesfémek", "Platinafémek", "Ritkaföldfémek"]}, {"topic": "Ismert antik görög orvosok/tudósok", "answers": ["Hippokratész", "Galénosz", "Arkhimédész", "Eratoszthenész", "Hérón", "Ptolemaiosz", "Hipparkhosz", "Empedoklész", "Anaximandrosz", "Dioszkoridész"]}, {"topic": "Ismert csillagászati jelenségek exobolygóknál", "answers": ["Tranzitmódszer", "Radiálissebesség-módszer", "Direkt képalkotás", "Gravitációs mikrolencse", "Asztrometriai módszer", "Lakhatósági zóna", "Exobolygó-atmoszféra-elemzés", "Forró Jupiter", "Szuper-Föld", "Törpebolygó-rendszer"]}, {"topic": "Ismert 19. századi feltalálók", "answers": ["Thomas Edison", "Alexander Graham Bell", "Nikola Tesla", "James Watt", "George Stephenson", "Samuel Morse", "Louis Pasteur", "Alfred Nobel", "Gottlieb Daimler", "Rudolf Diesel"]}, {"topic": "Ismert középkori magyar egyházi épületek", "answers": ["Jáki templom", "Pannonhalmi Főapátság", "Esztergomi bazilika", "Egri bazilika", "Váci székesegyház", "Zsámbéki templomrom", "Lébényi templom", "Dömösi prépostság", "Bélapátfalvi apátság", "Pécsi ókeresztény sírkamrák"]}, {"topic": "Ismert paleontológusok", "answers": ["Charles Darwin", "Mary Anning", "Richard Owen", "Georges Cuvier", "Louis Leakey", "Mary Leakey", "Jack Horner", "Robert Bakker", "Paul Sereno", "Xu Xing"]}, {"topic": "Ismert reneszánsz mecénás családok", "answers": ["Medici", "Sforza", "Este", "Gonzaga", "Borgia", "Farnese", "Della Rovere", "Visconti", "Orsini", "Colonna"]}, {"topic": "Ismert kémiai analitikai módszerek", "answers": ["Kromatográfia", "Spektroszkópia", "Titrálás", "Tömegspektrometria", "Elektroforézis", "Röntgendiffrakció", "NMR-spektroszkópia", "Atomabszorpciós spektrometria", "Potenciometria", "Voltammetria"]}, {"topic": "Ismert reneszánsz kori térképészek", "answers": ["Gerardus Mercator", "Abraham Ortelius", "Martin Waldseemüller", "Piri Reis", "Amerigo Vespucci", "Sebastian Münster", "Jodocus Hondius", "Willem Blaeu", "Nicolas Sanson", "Guillaume Delisle"]}, {"topic": "Ismert modern építészek", "answers": ["Frank Lloyd Wright", "Le Corbusier", "Zaha Hadid", "Frank Gehry", "Norman Foster", "Renzo Piano", "I. M. Pei", "Santiago Calatrava", "Rem Koolhaas", "Tadao Ando"]}, {"topic": "Ismert 20. századi hidegháborús fogalmak", "answers": ["Vasfüggöny", "Berlini fal", "Kubai rakétaválság", "Fegyverkezési verseny", "Doktrína a feltartóztatásról", "Marshall-terv", "Varsói Szerződés", "NATO", "Csillagháborús terv (SDI)", "Enyhülési politika (détente)"]}, {"topic": "Ismert modern Nobel-díjas fizikusok", "answers": ["Peter Higgs", "François Englert", "Kip Thorne", "Rainer Weiss", "Barry Barish", "Roger Penrose", "Andrea Ghez", "Reinhard Genzel", "Giorgio Parisi", "John Bardeen"]}, {"topic": "Ismert bizánci hadvezérek", "answers": ["Belizariosz", "Narszész", "Herakleiosz", "Nikephorosz Phokász", "II. Baszileiosz", "Ioannész Kurkuász", "Alexiosz Sztratégopulosz", "Bardasz Szklérosz", "Bardasz Phokász", "Romanosz Diogenész"]}, {"topic": "Ismert 20. századi Nobel-díjas írónők", "answers": ["Toni Morrison", "Doris Lessing", "Alice Munro", "Svetlana Alexijevics", "Herta Müller", "Wisława Szymborska", "Nadine Gordimer", "Elfriede Jelinek", "Selma Lagerlöf", "Pearl S. Buck"]}, {"topic": "Ismert vegyi elemek szimbólum-eredete (latin nevek)", "answers": ["Vas (Ferrum)", "Arany (Aurum)", "Ezüst (Argentum)", "Ólom (Plumbum)", "Réz (Cuprum)", "Ón (Stannum)", "Nátrium (Natrium)", "Kálium (Kalium)", "Higany (Hydrargyrum)", "Antimon (Stibium)"]}, {"topic": "Ismert 19. századi függetlenségi mozgalmak", "answers": ["Görög függetlenségi háború", "Latin-amerikai függetlenségi háborúk", "Belga forradalom", "Olasz egyesítés (Risorgimento)", "Lengyel novemberi felkelés", "Magyar 1848–49-es szabadságharc", "Ír Home Rule mozgalom", "Bolgár áprilisi felkelés", "Ír függetlenségi háború", "Kubai függetlenségi háború"]}, {"topic": "Ismert 20. századi Nobel-díjas fiziológusok/orvosok", "answers": ["Alexander Fleming", "Karl Landsteiner", "Ivan Pavlov", "Robert Koch", "Frederick Banting", "Howard Florey", "James Watson", "Francis Crick", "Barbara McClintock", "Peter Medawar"]}, {"topic": "Ismert magyar millenniumi (1896) emlékművek", "answers": ["Hősök tere", "Millenniumi emlékmű", "Vajdahunyad vára", "Széchenyi fürdő elődje", "Andrássy út díszkivilágítása", "Milleniumi Földalatti Vasút", "Halászbástya", "Mátyás-templom felújítása", "Országház épülete", "Szabadság híd (akkor Ferenc József híd)"]}, {"topic": "Ismert 20. századi gyarmati függetlenedések", "answers": ["India függetlensége", "Algéria függetlensége", "Kongó függetlensége", "Vietnám függetlensége", "Indonézia függetlensége", "Ghána függetlensége", "Kenya függetlensége", "Angola függetlensége", "Fülöp-szigetek függetlensége", "Nigéria függetlensége"]}, {"topic": "Ismert csillagászati küldetések a Marsra", "answers": ["Viking–1", "Viking–2", "Mars Pathfinder", "Spirit rover", "Opportunity rover", "Curiosity rover", "Perseverance rover", "Mars Express", "MAVEN szonda", "InSight lander"]}, {"topic": "Ismert 20. századi Nobel-díjas fizikusok (kivéve magyarok)", "answers": ["Albert Einstein", "Niels Bohr", "Werner Heisenberg", "Erwin Schrödinger", "Paul Dirac", "Richard Feynman", "Murray Gell-Mann", "Steven Weinberg", "Wolfgang Pauli", "Max Planck"]}, {"topic": "Ismert bizánci uralkodónők/császárnők", "answers": ["Iréné császárnő", "Theodóra császárnő", "Zoé császárnő", "Theophano császárnő", "Pulchéria császárnő", "Ariadné császárnő", "Eudoxia császárnő", "Anna Komnéné", "Verina császárnő", "Martina császárnő"]}, {"topic": "Ismert 20. századi Nobel-díjas biológusok", "answers": ["James Watson", "Francis Crick", "Barbara McClintock", "Konrad Lorenz", "Nikolaas Tinbergen", "Karl von Frisch", "Craig Mello", "Andrew Fire", "Elizabeth Blackburn", "Carol Greider"]}, {"topic": "Ismert ókori római jogi fogalmak", "answers": ["Ius civile", "Ius gentium", "Praetor", "Senatus consultum", "Lex XII tabularum", "Patria potestas", "Manumissio", "Usucapio", "Res publica", "Corpus Iuris Civilis"]}, {"topic": "Ismert 19. századi magyar tudósok", "answers": ["Bolyai János", "Semmelweis Ignác", "Jedlik Ányos", "Eötvös Loránd", "Kandó Kálmán", "Puskás Tivadar", "Bláthy Ottó", "Zipernowsky Károly", "Déri Miksa", "Irinyi János"]}, {"topic": "Ismert bizánci pénznemek", "answers": ["Solidus", "Follis", "Miliarészion", "Hyperpüron", "Tremissis", "Dénár (bizánci)", "Aszpron trachy", "Sztamenon", "Kerátion", "Numion"]}, {"topic": "Ismert ókori görög matematikai tételek/eljárások", "answers": ["Eukleidész-algoritmus", "Pitagorasz-tétel", "Arkhimédész-féle térfogatszámítás", "Thalész-tétel", "Erathosztenész szitája", "Eukleidész axiómái", "Aranymetszés szerkesztése", "Konikus szeletek elmélete", "Zénón-paradoxonok", "Diophantoszi egyenletek"]}, {"topic": "Ismert 20. századi hidegháborús kémkedési ügyek", "answers": ["Cambridge Five", "Rosenberg-per", "U–2 incidens", "Berlini alagút-akció", "Cuban Missile Crisis kémjelentések", "Oleg Penkovszkij-ügy", "Aldrich Ames-ügy", "Kim Philby disszidálása", "Klaus Fuchs-ügy", "Profumo-botrány"]}]};
+
+/* =========================================================
+   PÁLYA FELÉPÍTÉSE (65 mező)
+   ========================================================= */
+const SEGMENTS = [
+  {type:'start'},
+  {type:'run', count:8, start:'purple'},
+  {type:'spiral'},
+  {type:'run', count:9, start:'purple'},
+  {type:'spiral'},
+  {type:'run', count:8, start:'orange'},
+  {type:'spiral'},
+  {type:'run', count:7, start:'orange'},
+  {type:'question'},
+  {type:'run', count:6, start:'purple'},
+  {type:'question'},
+  {type:'run', count:5, start:'purple'},
+  {type:'question'},
+  {type:'run', count:4, start:'orange'},
+  {type:'question'},
+  {type:'run', count:3, start:'orange'},
+  {type:'question'},
+  {type:'run', count:5, start:'purple'},
+  {type:'finish'}
+];
+function buildTrack(){
+  const track = [];
+  SEGMENTS.forEach(seg=>{
+    if(seg.type==='run'){
+      let color = seg.start;
+      for(let k=0;k<seg.count;k++){
+        track.push({type:'normal', color});
+        color = (color==='purple') ? 'orange' : 'purple';
+      }
+    } else {
+      track.push({type: seg.type});
+    }
+  });
+  return track;
+}
+const TRACK = buildTrack();
+const TOTAL = TRACK.length;
+
+const CX = 300, CY = 300, MAXR = 262, MINR = 58, TURNS = 3.3;
+const TOTAL_ANGLE = TURNS * 2 * Math.PI;
+function cellPoint(i){
+  const t = i/(TOTAL-1);
+  const angle = -Math.PI/2 + t*TOTAL_ANGLE;
+  const radius = MAXR - t*(MAXR-MINR);
+  return { x: CX + radius*Math.cos(angle), y: CY + radius*Math.sin(angle) };
+}
+function buildSpiralPath(){
+  const steps = 500; let d = '';
+  for(let s=0;s<=steps;s++){
+    const t = s/steps;
+    const angle = -Math.PI/2 + t*TOTAL_ANGLE;
+    const radius = MAXR - t*(MAXR-MINR);
+    const x = CX + radius*Math.cos(angle);
+    const y = CY + radius*Math.sin(angle);
+    d += (s===0 ? 'M' : 'L') + x.toFixed(2) + ',' + y.toFixed(2) + ' ';
+  }
+  return d;
+}
+function typeFill(cell){
+  if(cell.type==='start') return 'var(--gold)';
+  if(cell.type==='finish') return 'var(--gold)';
+  if(cell.type==='question') return 'var(--cream)';
+  if(cell.type==='spiral') return '#2fb6c9';
+  return cell.color==='purple' ? 'var(--purple)' : 'var(--orange)';
+}
+
+/* =========================================================
+   TÖBB-ESZKÖZÖS RÉTEG (Firebase Firestore - állandó, szerver-
+   oldali állapot, session resumption, csapatszín-lefoglalás
+   tranzakcióval, akárcsak a Kódfejtő appban)
+   ========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyAEhj9rVhGmPAUhWe6GOihhJIm0XC9LMHQ",
+  authDomain: "kodfejto-app.firebaseapp.com",
+  projectId: "kodfejto-app",
+  storageBucket: "kodfejto-app.firebasestorage.app",
+  messagingSenderId: "456016838261",
+  appId: "1:456016838261:web:dfad67e888530020e9c23c",
+  measurementId: "G-M2CS7YRX8Z"
+};
+
+const FIREBASE_AVAILABLE = (typeof window !== 'undefined' && typeof window.firebase !== 'undefined');
+let db = null;
+if(FIREBASE_AVAILABLE){
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+  }catch(e){ /* pl. hot-reload esetén már inicializálva van, elnyeljük */
+    try{ db = firebase.firestore(); }catch(e2){}
+  }
+}
+const ROOMS_COLLECTION = 'tension_rooms';
+const SESSION_KEY = 'tension_session_v1';
+const LOCAL_SAVE_KEY = 'tension_local_game_v1';
+
+let conn = {
+  mode: 'local',      // 'local' | 'online'
+  role: null,         // null (egy eszközön) | 'blue' | 'red'
+  roomCode: null,
+  status: 'idle',      // idle | connecting | connected | waiting_partner | error
+  errorMsg: null,
+  unsubscribe: null,
+  partnerPresent: false
+};
+
+let applyingRemote = false;
+let lastPushedJSON = null;
+
+function generateRoomCode(){ return String(Math.floor(1000 + Math.random()*9000)); }
+
+function saveSession(){
+  try{
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ roomCode: conn.roomCode, role: conn.role }));
+  }catch(e){}
+}
+function loadSession(){
+  try{
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function clearSession(){
+  try{ localStorage.removeItem(SESSION_KEY); }catch(e){}
+}
+
+function saveLocalGame(){
+  if(conn.mode === 'online') return; // az online módot a Firestore session kezeli
+  if(!state || state.screen !== 'game') return;
+  try{ localStorage.setItem(LOCAL_SAVE_KEY, JSON.stringify(state)); }catch(e){}
+}
+function loadLocalGame(){
+  try{
+    const raw = localStorage.getItem(LOCAL_SAVE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function clearLocalGame(){
+  try{ localStorage.removeItem(LOCAL_SAVE_KEY); }catch(e){}
+}
+// Egységes "mentsd el az állapotot, bárhogy is játszunk" hívás
+function persistState(){
+  if(conn.mode === 'online') pushState();
+  else saveLocalGame();
+}
+
+function roomRef(code){ return db.collection(ROOMS_COLLECTION).doc(code); }
+
+function subscribeRoom(code){
+  if(conn.unsubscribe) conn.unsubscribe();
+  conn.unsubscribe = roomRef(code).onSnapshot((doc)=>{
+    if(!doc.exists) return;
+    const data = doc.data();
+    conn.partnerPresent = !!(data.claimedRoles && data.claimedRoles.blue && data.claimedRoles.red);
+    if(conn.status === 'connecting' || conn.status === 'waiting_partner'){
+      conn.status = conn.partnerPresent ? 'connected' : 'waiting_partner';
+    }
+    if(data.state){
+      const incomingJSON = JSON.stringify(data.state);
+      if(incomingJSON !== lastPushedJSON){
+        applyingRemote = true;
+        state = data.state;
+        applyingRemote = false;
+        render();
+        if(state.screen === 'game'){
+          if(state.mode === 'full'){
+            if(state.phase === 'playing' && !timerInterval){
+              startTimer(iAmReader());
+            } else if(state.phase !== 'playing' && timerInterval){
+              stopTimer();
+            }
+          } else { // tracker mód
+            const remaining = computeRemaining();
+            if(state.trackerTimerEnabled && state.timerEndsAt && remaining > 0 && !timerInterval){
+              startTimer(false);
+            } else if((!state.trackerTimerEnabled || !state.timerEndsAt || remaining <= 0) && timerInterval){
+              stopTimer();
+            }
+          }
+        }
+      }
+    }
+    if(conn.status !== 'error') render();
+  }, (err)=>{
+    conn.status = 'error';
+    conn.errorMsg = 'Kapcsolati hiba a szerverrel: ' + (err && err.message ? err.message : 'ismeretlen hiba');
+    render();
+  });
+}
+
+function pushState(){
+  if(conn.mode !== 'online' || !conn.roomCode || applyingRemote) return;
+  lastPushedJSON = JSON.stringify(state);
+  roomRef(conn.roomCode).set({
+    state: state,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true }).catch(()=>{ /* átmeneti hálózati hiba, a következő akciónál újra próbálkozunk */ });
+}
+// A kör-funkciók a persistState()-et hívják (lásd feljebb), ami online és
+// egy eszközös módban is elmenti az állapotot.
+
+async function createRoomFirestore(code, role){
+  conn.mode = 'online'; conn.role = role; conn.roomCode = code;
+  conn.status = 'connecting'; conn.errorMsg = null;
+  render();
+  try{
+    await db.runTransaction(async (tx)=>{
+      const doc = await tx.get(roomRef(code));
+      const claimed = (doc.exists && doc.data().claimedRoles) || {};
+      claimed[role] = true;
+      tx.set(roomRef(code), { claimedRoles: claimed }, { merge: true });
+    });
+    saveSession();
+    subscribeRoom(code);
+    conn.status = 'waiting_partner';
+    render();
+  }catch(e){
+    conn.status = 'error';
+    conn.errorMsg = 'Nem sikerült létrehozni a szobát. Ellenőrizd az internetkapcsolatot.';
+    render();
+  }
+}
+
+async function joinRoomFirestore(code, role){
+  conn.mode = 'online'; conn.role = role; conn.roomCode = code;
+  conn.status = 'connecting'; conn.errorMsg = null;
+  render();
+  try{
+    await db.runTransaction(async (tx)=>{
+      const doc = await tx.get(roomRef(code));
+      if(!doc.exists){
+        throw new Error('NO_ROOM');
+      }
+      const claimed = doc.data().claimedRoles || {};
+      if(claimed[role]){
+        throw new Error('ROLE_TAKEN');
+      }
+      claimed[role] = true;
+      tx.set(roomRef(code), { claimedRoles: claimed }, { merge: true });
+    });
+    saveSession();
+    subscribeRoom(code);
+    conn.status = 'connected';
+    render();
+  }catch(e){
+    conn.status = 'error';
+    conn.errorMsg = e.message === 'NO_ROOM'
+      ? 'Nincs ilyen kódú szoba. Ellenőrizd, hogy a másik eszközön már létrehozták-e.'
+      : e.message === 'ROLE_TAKEN'
+        ? 'Ezt a csapatot már valaki más választotta ezen az eszközön/szobában. Válassz másik csapatot.'
+        : 'Nem sikerült csatlakozni. Ellenőrizd az internetkapcsolatot és a kódot.';
+    render();
+  }
+}
+
+async function resumeSessionFirestore(session){
+  conn.mode = 'online'; conn.role = session.role; conn.roomCode = session.roomCode;
+  conn.status = 'connecting'; conn.errorMsg = null;
+  render();
+  try{
+    const doc = await roomRef(session.roomCode).get();
+    if(!doc.exists){
+      throw new Error('NO_ROOM');
+    }
+    subscribeRoom(session.roomCode);
+    conn.status = 'connected';
+    render();
+  }catch(e){
+    conn.status = 'error';
+    conn.errorMsg = 'A korábbi szoba már nem érhető el.';
+    clearSession();
+    render();
+  }
+}
+
+function leaveRoom(){
+  if(conn.unsubscribe) conn.unsubscribe();
+  // Felszabadítjuk a csapat-foglalást, hogy más újra elfoglalhassa (best-effort, nem várjuk meg)
+  if(conn.mode === 'online' && conn.roomCode && conn.role){
+    try{
+      roomRef(conn.roomCode).set({ claimedRoles: { [conn.role]: firebase.firestore.FieldValue.delete() } }, { merge: true }).catch(()=>{});
+    }catch(e){}
+  }
+  clearSession();
+  conn = { mode:'local', role:null, roomCode:null, status:'idle', errorMsg:null, unsubscribe:null, partnerPresent:false };
+}
+
+// Melyik csapat a "cselekvő" fél az adott fázisban (ő húz/választ/pontoz épp)
+function actingRole(){
+  if(state.winner) return state.turn;
+  if(['turn_start','color_choice','predict'].includes(state.phase)) return state.turn;
+  if(['reveal','playing'].includes(state.phase)) return otherTeam(state.turn);
+  return state.turn; // 'result' – bárki továbbléphet
+}
+// Ez az eszköz jogosult-e most cselekedni / látni a rejtett tartalmat
+function iAmActing(){
+  return conn.mode !== 'online' || !conn.role || conn.role === actingRole();
+}
+// Ez az eszköz a felolvasó csapaté-e (a kártyát csak ő láthatja reveal/playing alatt)
+function iAmReader(){
+  return conn.mode !== 'online' || !conn.role || conn.role === otherTeam(state.turn);
+}
+
+/* =========================================================
+   ÁLLAPOT
+   ========================================================= */
+let state = null;
+
+function freshState(){
+  return {
+    screen: 'connect', // connect | setup | game
+    names: { blue: 'Kék csapat', red: 'Piros csapat' },
+    mode: 'full', // 'full' | 'tracker'
+    startTeam: 'blue',
+    spiralRuleEnabled: true,
+    timerDuration: 60,
+    trackerTimerEnabled: false, // opcionális homokóra a pályakövető módhoz
+
+    pos: { blue: 0, red: 0 },
+    turn: 'blue',
+    winner: null,
+    log: [],
+
+    // kör-fázis: turn_start | color_choice | predict | reveal | playing | result
+    phase: 'turn_start',
+    chosenColor: null,      // 'lila' | 'narancs'
+    isQuestionTurn: false,
+    predicted: null,
+    revealed: false,
+    currentCard: null,      // {topic, answers, checked:[..]}
+    lastResult: null,       // {achieved, move, text}
+    timerEndsAt: null,      // epoch ms – szinkronizált homokóra a több-eszközös módhoz
+    rev: 0,                 // szinkron-verziószám (több-eszközös módhoz)
+
+    decks: {
+      lila: { order: shuffledIndices(TOPICS.lila.length), pointer: 0 },
+      narancs: { order: shuffledIndices(TOPICS.narancs.length), pointer: 0 }
+    }
+  };
+}
+
+
+function shuffledIndices(n){
+  const arr = Array.from({length:n}, (_,i)=>i);
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function teamName(t){ return state.names[t]; }
+function otherTeam(t){ return t==='blue' ? 'red' : 'blue'; }
+
+function addLog(text){
+  state.log.unshift(text);
+}
+
+function cellLabel(cell){
+  if(cell.type==='start') return 'Start mez\u0151';
+  if(cell.type==='finish') return 'C\u00e9l mez\u0151';
+  if(cell.type==='question') return 'K\u00e9rd\u0151jel mez\u0151';
+  if(cell.type==='spiral') return 'Spir\u00e1l mez\u0151';
+  return cell.color==='purple' ? 'Lila mez\u0151' : 'Narancs mez\u0151';
+}
+
+/* =========================================================
+   PÁLYALOGIKA
+   ========================================================= */
+function applyMove(team, amount){
+  const isForward = amount > 0;
+  let pos = state.pos[team] + amount;
+  if(pos >= TOTAL-1){
+    state.pos[team] = TOTAL-1;
+    state.winner = team;
+    return;
+  }
+  if(pos < 0) pos = 0;
+  state.pos[team] = pos;
+
+  if(!isForward) return; // visszalépésnél nincs újabb mezőhatás
+
+  const cell = TRACK[pos];
+  if(cell.type === 'spiral' && state.spiralRuleEnabled){
+    addLog(`${teamName(team)}: spir\u00e1l mez\u0151re \u00e9rkezett \u2192 a l\u00e9p\u00e9s (${amount}) meg ism\u00e9tl\u0151dik.`);
+    applyMove(team, amount);
+  }
+}
+
+/* =========================================================
+   KÁRTYAHÚZÁS
+   ========================================================= */
+function drawCard(colorKey){ // 'lila' | 'narancs'
+  const deck = state.decks[colorKey];
+  if(deck.pointer >= deck.order.length){
+    deck.order = shuffledIndices(TOPICS[colorKey].length);
+    deck.pointer = 0;
+    addLog(`\u00daj keverés t\u00f6rt\u00e9nt a ${colorKey === 'lila' ? 'lila' : 'narancss\u00e1rga'} pakliban.`);
+  }
+  const idx = deck.order[deck.pointer];
+  deck.pointer++;
+  const raw = TOPICS[colorKey][idx];
+  return { topic: raw.topic, answers: raw.answers.slice(), checked: raw.answers.map(()=>false) };
+}
+
+/* =========================================================
+   KÖR-FOLYAMAT (TELJES JÁTÉK MÓD)
+   ========================================================= */
+function beginTurn(){
+  state.phase = 'turn_start';
+  state.chosenColor = null;
+  state.isQuestionTurn = false;
+  state.predicted = null;
+  state.revealed = false;
+  state.currentCard = null;
+  state.lastResult = null;
+  render();
+  persistState();
+}
+
+function startDraw(){
+  const team = state.turn;
+  const cell = TRACK[state.pos[team]];
+  if(cell.type === 'normal'){
+    state.chosenColor = cell.color === 'purple' ? 'lila' : 'narancs';
+    state.isQuestionTurn = false;
+    proceedToRevealOrPredict();
+  } else if(cell.type === 'question'){
+    state.isQuestionTurn = true;
+    state.phase = 'color_choice';
+  } else { // start vagy spirál mezőn állva (ritka eset)
+    state.isQuestionTurn = false;
+    state.phase = 'color_choice';
+  }
+  render();
+  persistState();
+}
+
+function chooseColor(color){
+  state.chosenColor = color;
+  proceedToRevealOrPredict();
+  render();
+  persistState();
+}
+
+function proceedToRevealOrPredict(){
+  if(state.isQuestionTurn){
+    state.phase = 'predict';
+  } else {
+    state.currentCard = drawCard(state.chosenColor);
+    state.phase = 'reveal';
+    state.revealed = false;
+  }
+}
+
+function submitPredict(){
+  const val = parseInt(document.getElementById('predictInput').value, 10) || 0;
+  state.predicted = Math.max(0, Math.min(10, val));
+  state.currentCard = drawCard(state.chosenColor);
+  state.phase = 'reveal';
+  state.revealed = false;
+  render();
+  persistState();
+}
+
+function revealCard(){
+  state.revealed = true;
+  render();
+  persistState();
+}
+
+function beginPlaying(){
+  state.phase = 'playing';
+  state.timerEndsAt = Date.now() + state.timerDuration*1000;
+  render();
+  persistState();
+  resetTimer();
+  startTimer(true);
+}
+
+function toggleAnswer(i){
+  state.currentCard.checked[i] = !state.currentCard.checked[i];
+  render();
+  persistState();
+}
+
+function currentTally(){
+  return state.currentCard.checked.filter(Boolean).length;
+}
+
+function endRound(){
+  if(state.phase !== 'playing') return; // véletlen dupla-hívás elleni védelem (két eszköz esetén)
+  stopTimer();
+  const team = state.turn;
+  const achieved = currentTally();
+  let move, text;
+  if(state.isQuestionTurn){
+    if(achieved >= state.predicted){
+      move = state.predicted;
+      text = `Bemondott sz\u00e1m: ${state.predicted}. El\u00e9rt: ${achieved}/10 \u2192 teljes\u00edtve! ${move} mez\u0151t l\u00e9ptek el\u0151re.`;
+    } else {
+      move = -state.predicted;
+      text = `Bemondott sz\u00e1m: ${state.predicted}. El\u00e9rt: ${achieved}/10 \u2192 nem siker\u00fclt. ${state.predicted} mez\u0151t l\u00e9ptek vissza.`;
+    }
+  } else {
+    move = achieved;
+    text = `El\u00e9rt v\u00e1laszok: ${achieved}/10 \u2192 ${achieved} mez\u0151t l\u00e9ptek el\u0151re.`;
+  }
+  addLog(`${teamName(team)}: ${text}`);
+  applyMove(team, move);
+  state.lastResult = { achieved, move, text };
+  state.phase = 'result';
+  state.timerEndsAt = null;
+  render();
+  persistState();
+}
+
+function nextTurn(){
+  if(state.winner){
+    render();
+    persistState();
+    return;
+  }
+  state.turn = otherTeam(state.turn);
+  beginTurn();
+}
+
+/* =========================================================
+   KÖR-FOLYAMAT (CSAK PÁLYA-KÖVETŐ MÓD)
+   ========================================================= */
+function trackerSubmitNormal(){
+  const val = parseInt(document.getElementById('scoreInput').value, 10) || 0;
+  const clamped = Math.max(0, Math.min(10, val));
+  const team = state.turn;
+  addLog(`${teamName(team)}: ${clamped} j\u00f3 v\u00e1lasz \u2192 ${clamped} mez\u0151t l\u00e9p.`);
+  applyMove(team, clamped);
+  trackerNextTurn();
+}
+function trackerSubmitPredict(){
+  const val = parseInt(document.getElementById('predictInput2').value, 10) || 0;
+  state.predicted = Math.max(0, Math.min(10, val));
+  state.phase = 'tracker_resolve';
+  render();
+  persistState();
+}
+function trackerSubmitResolve(){
+  const val = parseInt(document.getElementById('actualInput').value, 10) || 0;
+  const actual = Math.max(0, Math.min(10, val));
+  const team = state.turn;
+  const predicted = state.predicted;
+  if(actual >= predicted){
+    addLog(`${teamName(team)}: bemondott ${predicted}-et, teljes\u00edtette (${actual}) \u2192 ${predicted} mez\u0151t l\u00e9p.`);
+    applyMove(team, predicted);
+  } else {
+    addLog(`${teamName(team)}: bemondott ${predicted}-et, de csak ${actual} siker\u00fclt \u2192 ${predicted} mez\u0151t l\u00e9p vissza.`);
+    applyMove(team, -predicted);
+  }
+  state.predicted = null;
+  trackerNextTurn();
+}
+function trackerNextTurn(){
+  if(state.winner){ render(); persistState(); return; }
+  state.turn = otherTeam(state.turn);
+  state.phase = 'turn_start';
+  resetTimer();
+  render();
+  persistState();
+}
+function nudge(team, delta){
+  let pos = state.pos[team] + delta;
+  pos = Math.max(0, Math.min(TOTAL-1, pos));
+  state.pos[team] = pos;
+  addLog(`K\u00e9zi korrekci\u00f3: ${teamName(team)} \u2192 ${pos}. mez\u0151 (${cellLabel(TRACK[pos])}).`);
+  render();
+  persistState();
+}
+
+function trackerStartTimer(){
+  resetTimer();
+  state.timerEndsAt = Date.now() + state.timerDuration*1000;
+  render();
+  persistState();
+  startTimer(false); // false: soha nem indít automatikus kör-lezárást, csak vizuális/hangjelzés
+}
+function trackerResetTimer(){
+  resetTimer();
+  render();
+  persistState();
+}
+
+/* =========================================================
+   HOMOKÓRA
+   ========================================================= */
+let timerInterval = null;
+let warned30 = false, warned10 = false;
+
+function computeRemaining(){
+  if(!state.timerEndsAt) return state.timerDuration;
+  return Math.max(0, Math.round((state.timerEndsAt - Date.now())/1000));
+}
+function resetTimer(){
+  stopTimer();
+  state.timerEndsAt = null;
+  warned30 = false; warned10 = false;
+  updateTimerDisplay();
+}
+function startTimer(autoMode){
+  if(timerInterval) return;
+  if(!state.timerEndsAt || computeRemaining() <= 0){
+    state.timerEndsAt = Date.now() + state.timerDuration*1000;
+  }
+  warned30 = computeRemaining() <= 30;
+  warned10 = computeRemaining() <= 10;
+  timerInterval = setInterval(()=>{
+    const remaining = computeRemaining();
+    updateTimerDisplay();
+    if(remaining <= 30 && !warned30){ warned30 = true; playWarningBeep(1); }
+    if(remaining <= 10 && !warned10){ warned10 = true; playWarningBeep(2); }
+    if(remaining <= 0){
+      stopTimer();
+      playBeep();
+      if(autoMode && state.phase === 'playing' && iAmReader()){
+        endRound();
+      }
+    }
+  }, 250);
+  updateStartBtn();
+}
+function stopTimer(){
+  if(timerInterval){ clearInterval(timerInterval); timerInterval = null; }
+  updateStartBtn();
+}
+function updateStartBtn(){
+  const btn = document.getElementById('timerStartBtn');
+  if(btn) btn.textContent = timerInterval ? 'Fut\u00f3ban\u2026' : '\u00d3ra ind\u00edt\u00e1sa';
+}
+function updateTimerDisplay(){
+  const disp = document.getElementById('timerDisplay');
+  if(!disp) return;
+  const remaining = computeRemaining();
+  const m = Math.floor(remaining/60);
+  const s = remaining % 60;
+  disp.textContent = m > 0 ? `${m}:${s.toString().padStart(2,'0')}` : `${s}`;
+  disp.style.color = remaining <= 10 ? '#e5471f' : (remaining <= 30 ? '#f0b93d' : 'var(--gold-soft)');
+}
+function playBeep(){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 0.18, 0.36].forEach((delay)=>{
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square'; osc.frequency.value = 880; gain.gain.value = 0.15;
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + delay); osc.stop(ctx.currentTime + delay + 0.15);
+    });
+  }catch(e){}
+}
+function playWarningBeep(count){
+  // Rövid, halkabb, magasabb pittyenés(ek) a 30 mp / 10 mp jelzéshez, megkülönböztetve a záró szignáltól
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const delays = count === 2 ? [0, 0.16] : [0];
+    delays.forEach((delay)=>{
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine'; osc.frequency.value = 1200; gain.gain.value = 0.10;
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + delay); osc.stop(ctx.currentTime + delay + 0.1);
+    });
+  }catch(e){}
+}
+
+/* =========================================================
+   BEÁLLÍTÁS KÉPERNYŐ
+   ========================================================= */
+function startGame(){
+  const blueInput = document.getElementById('blueNameInput');
+  const redInput = document.getElementById('redNameInput');
+  const startSel = document.getElementById('setupStartTeam');
+  const modeSel = document.querySelector('input[name="modeRadio"]:checked');
+  const spiralChk = document.getElementById('setupSpiralToggle');
+  const timerInput = document.getElementById('setupTimerDuration');
+  const trackerTimerChk = document.getElementById('setupTrackerTimerToggle');
+
+  state.names.blue = (blueInput.value || 'K\u00e9k csapat').trim();
+  state.names.red = (redInput.value || 'Piros csapat').trim();
+  state.startTeam = startSel.value;
+  state.mode = modeSel ? modeSel.value : 'full';
+  state.spiralRuleEnabled = spiralChk.checked;
+  state.timerDuration = Math.max(5, Math.min(300, parseInt(timerInput.value,10) || 60));
+  state.trackerTimerEnabled = trackerTimerChk ? trackerTimerChk.checked : false;
+
+  state.pos = { blue:0, red:0 };
+  state.turn = state.startTeam;
+  state.winner = null;
+  state.log = [];
+  state.decks = {
+    lila: { order: shuffledIndices(TOPICS.lila.length), pointer: 0 },
+    narancs: { order: shuffledIndices(TOPICS.narancs.length), pointer: 0 }
+  };
+  state.screen = 'game';
+  state.phase = 'turn_start';
+  state.rev = 0;
+  resetTimer();
+  render();
+  persistState();
+}
+
+function exitToMenu(){
+  const isOnline = conn.mode === 'online';
+  if(state.screen === 'game' && !state.winner && isOnline){
+    // Online módban a kilépés felszabadítja a csapat-helyedet a szobában – erre érdemes figyelmeztetni.
+    const ok = confirm('Biztosan kilépsz a menübe? Ez felszabadítja a csapat-helyedet ebben a szobában, a másik játékos ezt észlelni fogja.');
+    if(!ok) return;
+  }
+  stopTimer();
+  leaveRoom();
+  // A helyi (egy eszközös) mentést NEM töröljük itt – a menüből visszatérve
+  // fel fogjuk ajánlani a folytatást. Csak explicit "Nem, új játék" választásnál törlődik.
+  const keepBlue = state.names ? state.names.blue : 'K\u00e9k csapat';
+  const keepRed = state.names ? state.names.red : 'Piros csapat';
+  state = freshState();
+  state.names.blue = keepBlue; state.names.red = keepRed;
+  state.screen = 'connect';
+  render();
+}
+
+/* =========================================================
+   KAPCSOLÓDÁSI KÉPERNYŐ (egy eszköz / két eszköz szobával)
+   ========================================================= */
+function chooseLocalMode(){
+  leaveRoom();
+  state.screen = 'setup';
+  render();
+}
+function createRoom(){
+  const roleSel = document.querySelector('input[name="hostRole"]:checked');
+  const role = roleSel ? roleSel.value : 'blue';
+  const code = generateRoomCode();
+  state.screen = 'setup';
+  createRoomFirestore(code, role);
+}
+function joinRoom(){
+  const codeInput = document.getElementById('joinCodeInput');
+  const roleSel = document.querySelector('input[name="joinRole"]:checked');
+  const code = (codeInput.value || '').trim();
+  if(!/^\d{4}$/.test(code)){
+    conn.status = 'error';
+    conn.errorMsg = 'A szoba kód 4 számjegyű legyen.';
+    render();
+    return;
+  }
+  const role = roleSel ? roleSel.value : 'blue';
+  state.screen = 'joining';
+  joinRoomFirestore(code, role);
+}
+function cancelJoin(){
+  leaveRoom();
+  state.screen = 'connect';
+  render();
+}
+function resumePreviousSession(){
+  const session = loadSession();
+  if(!session) return;
+  state.screen = 'joining';
+  resumeSessionFirestore(session);
+}
+function declineResume(){
+  clearSession();
+  state.screen = 'connect';
+  render();
+}
+function resumeLocalGame(){
+  const saved = loadLocalGame();
+  if(!saved) return;
+  conn = { mode:'local', role:null, roomCode:null, status:'idle', errorMsg:null, unsubscribe:null, partnerPresent:false };
+  state = saved;
+  render();
+  // Ha épp egy kör kellős közepén (idő fut) mentettük el, indítsuk újra a kijelzést
+  if(state.screen === 'game'){
+    if(state.mode === 'full' && state.phase === 'playing'){
+      startTimer(true);
+    } else if(state.mode === 'tracker' && state.trackerTimerEnabled && state.timerEndsAt && computeRemaining() > 0){
+      startTimer(false);
+    }
+  }
+}
+function declineResumeLocal(){
+  clearLocalGame();
+  render();
+}
+
+/* =========================================================
+   RAJZOLÁS
+   ========================================================= */
+function drawBoardSVG(){
+  let inner = '';
+  inner += `<circle cx="${CX}" cy="${CY}" r="${MAXR+18}" fill="#0a0d2c" stroke="#f0b93d" stroke-width="4"/>`;
+  inner += `<circle cx="${CX}" cy="${CY}" r="${MINR-18}" fill="url(#centerGlow)"/>`;
+  inner += `<path d="${buildSpiralPath()}" fill="none" stroke="#3a3f7a" stroke-width="14" stroke-linecap="round"/>`;
+  TRACK.forEach((cell,i)=>{
+    const p = cellPoint(i);
+    const r = (cell.type==='start'||cell.type==='finish') ? 15 : 10.5;
+    inner += `<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${r}" fill="${typeFill(cell)}" stroke="#0a0d2c" stroke-width="2.5"/>`;
+    if(cell.type==='question'){
+      inner += `<text x="${p.x.toFixed(2)}" y="${(p.y+3.5).toFixed(2)}" text-anchor="middle" font-size="11" font-weight="800" fill="#2a1c00" font-family="Arial">?</text>`;
+    }
+    if(cell.type==='spiral'){
+      inner += `<text x="${p.x.toFixed(2)}" y="${(p.y+4).toFixed(2)}" text-anchor="middle" font-size="10" fill="#06303a">&#127744;</text>`;
+    }
+    if(cell.type==='start'){
+      inner += `<text x="${p.x.toFixed(2)}" y="${(p.y+24).toFixed(2)}" text-anchor="middle" font-size="10" font-weight="700" fill="#f0b93d" font-family="Arial">START</text>`;
+    }
+    if(cell.type==='finish'){
+      inner += `<text x="${p.x.toFixed(2)}" y="${(p.y-19).toFixed(2)}" text-anchor="middle" font-size="10" font-weight="700" fill="#f0b93d" font-family="Arial">C&Eacute;L</text>`;
+    }
+  });
+  inner += `<text x="${CX}" y="${CY-4}" text-anchor="middle" font-size="26" font-weight="900" fill="#f0b93d" font-family="Impact, Arial Black" letter-spacing="1">TENSION</text>`;
+  inner += `<text x="${CX}" y="${CY+18}" text-anchor="middle" font-size="10" fill="#9aa0c9" font-family="Arial">${state.mode==='full' ? 'teljes j\u00e1t\u00e9k' : 'tracker'}</text>`;
+
+  const defs = `<defs><radialGradient id="centerGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#2a2f6e"/><stop offset="100%" stop-color="#0a0d2c"/></radialGradient></defs>`;
+
+  const bluePt = cellPoint(state.pos.blue);
+  const redPt = cellPoint(state.pos.red);
+  let bx = bluePt.x, by = bluePt.y, rx = redPt.x, ry = redPt.y;
+  if(state.pos.blue === state.pos.red){ bx -= 10; rx += 10; }
+  const pawns = `
+    <circle cx="${rx.toFixed(2)}" cy="${ry.toFixed(2)}" r="15.5" fill="#000" opacity="0.35"/>
+    <circle cx="${bx.toFixed(2)}" cy="${by.toFixed(2)}" r="15.5" fill="#000" opacity="0.35"/>
+    <circle cx="${rx.toFixed(2)}" cy="${ry.toFixed(2)}" r="13" fill="#d1461f" stroke="#fff" stroke-width="3"/>
+    <circle cx="${bx.toFixed(2)}" cy="${by.toFixed(2)}" r="13" fill="#2f6fed" stroke="#fff" stroke-width="3"/>
+    <circle cx="${(rx-4).toFixed(2)}" cy="${(ry-4).toFixed(2)}" r="3.5" fill="#ffffff" opacity="0.65"/>
+    <circle cx="${(bx-4).toFixed(2)}" cy="${(by-4).toFixed(2)}" r="3.5" fill="#ffffff" opacity="0.65"/>
+  `;
+  return defs + inner + pawns;
+}
+
+/* =========================================================
+   FŐ RENDER
+   ========================================================= */
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderConnectScreen(){
+  const localSave = loadLocalGame();
+  const localResumeBanner = (localSave && localSave.screen === 'game' && !localSave.winner) ? `
+    <div class="panel">
+      <h2>Korábbi, egy eszközön játszott meccs</h2>
+      <p class="hint">Van egy mentett állás: <b>${esc(localSave.names.blue)}</b> a(z) ${localSave.pos.blue}. mezőn, <b>${esc(localSave.names.red)}</b> a(z) ${localSave.pos.red}. mezőn. Folytatod?</p>
+      <button onclick="resumeLocalGame()">Folytat\u00e1s</button>
+      <button class="secondary" onclick="declineResumeLocal()">Nem, \u00faj j\u00e1t\u00e9k</button>
+    </div>` : '';
+
+  if(!FIREBASE_AVAILABLE){
+    return `
+    <div class="setup-card">
+      ${localResumeBanner}
+      <div class="panel">
+        <h2>Eszközök</h2>
+        <p class="hint" style="font-size:13px;">A két-eszközös módhoz nem sikerült betölteni a szerver-kapcsolatot (lehet, hogy nincs internetkapcsolat). Folytathatod egy eszközön.</p>
+      </div>
+      <button onclick="chooseLocalMode()">Tov\u00e1bb egy eszk\u00f6z\u00f6n</button>
+    </div>`;
+  }
+  const session = loadSession();
+  const resumeBanner = session ? `
+    <div class="panel">
+      <h2>Korábbi szoba</h2>
+      <p class="hint">Van egy mentett munkamenet: szoba <b>${esc(session.roomCode)}</b>, mint <b>${session.role==='blue' ? 'K\u00e9k' : 'Piros'} csapat</b>. Folytatod?</p>
+      <button onclick="resumePreviousSession()">Folytat\u00e1s</button>
+      <button class="secondary" onclick="declineResume()">Nem, \u00faj j\u00e1t\u00e9k</button>
+    </div>` : '';
+  return `
+  <div class="setup-card">
+    ${localResumeBanner}
+    ${resumeBanner}
+    <div class="panel">
+      <h2>Hogyan j\u00e1tszotok?</h2>
+      <p class="hint">Egy k\u00f6z\u00f6s eszk\u00f6z\u00f6n adj\u00e1tok tov\u00e1bb egym\u00e1snak a telefont/tabletet, vagy k\u00e9t k\u00fcl\u00f6n eszk\u00f6zön, szob\u00e1n kereszt\u00fcl j\u00e1tszotok \u2014 ekkor a felolvasand\u00f3 lap csak a felolvas\u00f3 csapat eszk\u00f6zén jelenik meg. Ehhez mindk\u00e9t eszk\u00f6zn\u00e9l internetkapcsolat sz\u00fcks\u00e9ges. Ha megszakad a kapcsolat vagy bez\u00e1rod az appot, k\u00e9s\u0151bb ugyanide visszat\u00e9rve automatikusan folytathatod.</p>
+      <button onclick="chooseLocalMode()">Egy eszk\u00f6z\u00f6n j\u00e1tszunk</button>
+    </div>
+
+    <div class="panel">
+      <h2>Két eszközön, szobával</h2>
+      <p class="hint" style="margin-bottom:14px;">Mindk\u00e9t j\u00e1t\u00e9kos nyissa meg ugyanezt az appot a saj\u00e1t eszk\u00f6z\u00e9n, az egyik hozzon l\u00e9tre szob\u00e1t, a m\u00e1sik csatlakozzon a kapott 4 jegy\u0171 k\u00f3ddal.</p>
+
+      <details open style="margin-bottom:16px;">
+        <summary>Új szoba létrehozása (gazda)</summary>
+        <span class="field-label" style="margin-top:8px;">Melyik csapat ez az eszköz?</span>
+        <label style="display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:13px;"><input type="radio" name="hostRole" value="blue" checked style="width:auto;"> Kék csapat</label>
+        <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:13px;"><input type="radio" name="hostRole" value="red" style="width:auto;"> Piros csapat</label>
+        <button onclick="createRoom()">Szoba létrehozása</button>
+      </details>
+
+      <details>
+        <summary>Csatlakozás meglévő szobához</summary>
+        <span class="field-label" style="margin-top:8px;">Szoba kód (4 számjegy)</span>
+        <input type="text" id="joinCodeInput" maxlength="4" placeholder="pl. 4821">
+        <span class="field-label">Melyik csapat ez az eszköz?</span>
+        <label style="display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:13px;"><input type="radio" name="joinRole" value="blue" checked style="width:auto;"> Kék csapat</label>
+        <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:13px;"><input type="radio" name="joinRole" value="red" style="width:auto;"> Piros csapat</label>
+        ${(conn.status==='error' && conn.errorMsg) ? `<p class="hint" style="color:#ff9d7a;">${esc(conn.errorMsg)}</p>` : ''}
+        <button onclick="joinRoom()">Csatlakoz\u00e1s</button>
+      </details>
+    </div>
+  </div>`;
+}
+
+function renderJoiningScreen(){
+  let statusText;
+  if(conn.status === 'error'){
+    statusText = `<span style="color:#ff9d7a;">${esc(conn.errorMsg || 'Hiba t\u00f6rt\u00e9nt.')}</span>`;
+  } else if(conn.status === 'connected' || conn.status === 'waiting_partner'){
+    statusText = conn.partnerPresent ? 'Kapcsol\u00f3dva! Mindk\u00e9t csapat jelen van.' : 'Kapcsol\u00f3dva! V\u00e1rakoz\u00e1s, hogy a m\u00e1sik csapat is csatlakozzon\u2026';
+  } else {
+    statusText = `Csatlakoz\u00e1s a(z) <b>${esc(conn.roomCode)}</b> k\u00f3d\u00fa szob\u00e1hoz\u2026`;
+  }
+  return `
+  <div class="setup-card">
+    <div class="gate" style="border-color: rgba(240,185,61,0.4); background: rgba(240,185,61,0.06);">
+      <div class="big-warn" style="color:var(--gold-soft);">&#128268; Kapcsol\u00f3d\u00e1s</div>
+      <p class="hint" style="margin:0 0 14px;">${statusText}</p>
+      ${conn.status==='error' ? `<button onclick="cancelJoin()">Vissza</button>` : `<button class="secondary" onclick="cancelJoin()">M\u00e9gse</button>`}
+    </div>
+  </div>`;
+}
+
+function renderSetupScreen(){
+  const roomBanner = (conn.mode === 'online' && conn.roomCode) ? `
+    <div class="panel" style="text-align:center;">
+      <h2>Szoba kód</h2>
+      <div style="font-family:Impact,'Arial Black',sans-serif; font-size:36px; letter-spacing:4px; color:var(--gold-soft);">${conn.roomCode}</div>
+      <p class="hint">Mondd be ezt a k\u00f3dot a m\u00e1sik j\u00e1t\u00e9kosnak, hogy csatlakozhasson (\u0151 lesz a ${conn.role==='blue' ? 'Piros' : 'K\u00e9k'} csapat eszk\u00f6ze).</p>
+      <p class="hint" style="margin:0;">Állapot: <b>${
+        conn.partnerPresent ? '\u2705 M\u00e1sik eszk\u00f6z csatlakozott' :
+        conn.status==='waiting_partner' ? '\u23f3 V\u00e1rakoz\u00e1s a m\u00e1sik eszk\u00f6zre\u2026' :
+        conn.status==='error' ? '\u26a0\ufe0f ' + esc(conn.errorMsg || 'Hiba') :
+        '\u23f3 Kapcsol\u00f3d\u00e1s\u2026'
+      }</b></p>
+    </div>` : '';
+  return `
+  <div class="setup-card">
+    ${roomBanner}
+    <div class="panel">
+      <h2>Csapatok</h2>
+      <div class="team-name-input"><span class="dot blue"></span>
+        <input type="text" id="blueNameInput" value="${esc(state.names.blue)}" placeholder="K\u00e9k csapat neve">
+      </div>
+      <div class="team-name-input"><span class="dot red"></span>
+        <input type="text" id="redNameInput" value="${esc(state.names.red)}" placeholder="Piros csapat neve">
+      </div>
+      <span class="field-label">Ki kezd?</span>
+      <select id="setupStartTeam">
+        <option value="blue" ${state.startTeam==='blue'?'selected':''}>${esc(state.names.blue)}</option>
+        <option value="red" ${state.startTeam==='red'?'selected':''}>${esc(state.names.red)}</option>
+      </select>
+    </div>
+
+    <div class="panel">
+      <h2>Játékmód</h2>
+      <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:14px; margin-bottom:10px;">
+        <input type="radio" name="modeRadio" value="full" ${state.mode==='full'?'checked':''} style="width:auto;">
+        <b>Teljes j\u00e1t\u00e9k</b> &ndash; az app h\u00fazza a kártyákat, elrejti a felolvasand\u00f3t, pip\u00e1lgat\u00f3s pontoz\u00f3val
+      </label>
+      <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:14px;">
+        <input type="radio" name="modeRadio" value="tracker" ${state.mode==='tracker'?'checked':''} style="width:auto;">
+        <b>Csak p\u00e1lyakövet\u0151</b> &ndash; fizikai kártyákkal j\u00e1tszotok, az app csak a b\u00e1bukat és pontokat követi
+      </label>
+    </div>
+
+    <div class="panel">
+      <h2>Beállítások</h2>
+      <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:13px; margin-bottom:14px;">
+        <input type="checkbox" id="setupSpiralToggle" ${state.spiralRuleEnabled?'checked':''} style="width:auto; margin:0;">
+        Spir\u00e1l mez\u0151 ism\u00e9tli a l\u00e9p\u00e9st
+      </label>
+      <span class="field-label">K\u00f6r hossza (m\u00e1sodperc) &mdash; hivatalos szab\u00e1ly szerint 60 mp</span>
+      <input type="number" id="setupTimerDuration" min="5" max="300" value="${state.timerDuration}">
+      <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:13px; margin-top:4px;">
+        <input type="checkbox" id="setupTrackerTimerToggle" ${state.trackerTimerEnabled?'checked':''} style="width:auto; margin:0;">
+        Homok\u00f3ra az appban <span style="color:var(--muted);">(csak p\u00e1lyakövet\u0151 m\u00f3dban jelenik meg &ndash; ha fizikai homok\u00f3r\u00e1t haszn\u00e1ltok, hagyd kikapcsolva)</span>
+      </label>
+    </div>
+
+    <button onclick="startGame()">J\u00e1t\u00e9k ind\u00edt\u00e1sa</button>
+  </div>`;
+}
+
+function renderTurnStartControls(){
+  const t = state.turn;
+  const cell = TRACK[state.pos[t]];
+  let cellDesc = '';
+  if(cell.type === 'normal'){
+    cellDesc = `A b\u00e1but ${cell.color==='purple' ? 'lila' : 'narancss\u00e1rga'} mez\u0151n \u00e1ll \u2192 ${cell.color==='purple' ? 'lila' : 'narancss\u00e1rga'} k\u00e1rty\u00e1t h\u00faztok.`;
+  } else if(cell.type === 'question'){
+    cellDesc = `A b\u00e1but k\u00e9rd\u0151jel mez\u0151n \u00e1ll \u2192 el\u0151re be kell mondanotok egy sz\u00e1mot, majd v\u00e1lasztotok sz\u00ednt.`;
+  } else if(cell.type === 'spiral'){
+    cellDesc = `A b\u00e1but spir\u00e1l mez\u0151n \u00e1ll \u2192 v\u00e1lasszatok sz\u00ednt.`;
+  } else {
+    cellDesc = `Start mez\u0151 \u2192 v\u00e1lasszatok sz\u00ednt.`;
+  }
+  return `
+    <p class="hint">${cellDesc}</p>
+    <button onclick="startDraw()">K\u00e1rtya h\u00faz\u00e1sa</button>
+  `;
+}
+
+function renderColorChoice(){
+  return `
+    <p class="hint">V\u00e1lasszatok, melyik pakliból h\u00fazzon az app:</p>
+    <button class="choice-purple" onclick="chooseColor('lila')">Lila</button>
+    <button class="choice-orange" onclick="chooseColor('narancs')">Narancss\u00e1rga</button>
+  `;
+}
+
+function renderPredict(){
+  return `
+    <p class="hint">A t\u00e9ma felolvas\u00e1sa el\u0151tt mondjatok be egy sz\u00e1mot: h\u00e1ny j\u00f3 v\u00e1laszt v\u00e1rtok?</p>
+    <input type="number" id="predictInput" min="0" max="10" value="5">
+    <button onclick="submitPredict()">Sz\u00e1m r\u00f6gz\u00edt\u00e9se \u00e9s k\u00e1rtya h\u00faz\u00e1sa</button>
+  `;
+}
+
+function renderReveal(){
+  const reader = otherTeam(state.turn);
+  if(!state.revealed){
+    return `
+      <div class="gate">
+        <div class="big-warn">&#128065; Csak a FELOLVAS\u00d3 csapat n\u00e9zzen ide!</div>
+        <p class="hint" style="margin:0 0 14px;">Felolvas\u00f3: <b>${esc(teamName(reader))}</b><br>
+        ${esc(teamName(state.turn))} csapat forduljon el vagy ne n\u00e9zzen a k\u00e9perny\u0151re &ndash; nekik kell majd megfejteni!</p>
+        <button onclick="revealCard()">Megn\u00e9zem a k\u00e1rty\u00e1t</button>
+      </div>
+    `;
+  }
+  const card = state.currentCard;
+  return `
+    <div class="hint">Felolvas\u00f3: <b>${esc(teamName(reader))}</b> &mdash; olvasd fel a t\u00e9m\u00e1t a ${esc(teamName(state.turn))} csapatnak, majd ind\u00edtsd az id\u0151t.</div>
+    <div class="card-topic">${esc(card.topic)}</div>
+    <button onclick="beginPlaying()">Id\u0151 ind\u00edt\u00e1sa (${state.timerDuration} mp)</button>
+  `;
+}
+
+function renderPlaying(){
+  const card = state.currentCard;
+  const rows = card.answers.map((a,i)=>`
+    <div class="answer-row ${card.checked[i] ? 'checked':''}" onclick="toggleAnswer(${i})">
+      <div class="box">${card.checked[i] ? '&#10003;' : ''}</div>
+      <span class="txt">${esc(a)}</span>
+    </div>
+  `).join('');
+  return `
+    <div id="timerWidget" style="margin-bottom:14px;">
+      <div id="timerDisplay" style="text-align:center; font-family: Impact, 'Arial Black', sans-serif; font-size:48px; letter-spacing:2px; color:var(--gold-soft); line-height:1;">${state.timerDuration}</div>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button onclick="startTimer(true)" id="timerStartBtn" style="margin:0;">\u00d3ra ind\u00edt\u00e1sa</button>
+        <button class="secondary" onclick="resetTimer()" style="margin:0; width:auto; padding:12px 16px;">&#8635;</button>
+      </div>
+    </div>
+    <div class="card-topic">${esc(card.topic)}</div>
+    <div class="tally">${currentTally()} / 10</div>
+    ${rows}
+    <button class="danger" onclick="endRound()" style="margin-top:10px;">Befejez\u00e9s / id\u0151 lej\u00e1rt</button>
+  `;
+}
+
+function renderResult(){
+  const r = state.lastResult;
+  const positive = r.move >= 0;
+  const card = state.currentCard;
+  const rows = card.answers.map((a,i)=>`
+    <div class="answer-row ${card.checked[i] ? 'checked':'missed'}" style="cursor:default;">
+      <div class="box ${card.checked[i] ? '' : 'missed-box'}">${card.checked[i] ? '&#10003;' : '&#10007;'}</div>
+      <span class="txt">${esc(a)}</span>
+    </div>
+  `).join('');
+  return `
+    <div class="result-box ${positive ? 'win':'lose'}">
+      <div class="big">${positive ? '+' : ''}${r.move} mez\u0151</div>
+      <div>${esc(r.text)}</div>
+    </div>
+    <div class="card-topic">${esc(card.topic)}</div>
+    <p class="hint" style="text-align:center;">A teljes lap most már mindkét csapat számára látható \u2014 zölddel az elhangzott, pirossal a kimaradt válaszok:</p>
+    ${rows}
+    <button onclick="nextTurn()" style="margin-top:12px;">${state.winner ? 'Eredm\u00e9ny megtekint\u00e9se' : 'K\u00f6vetkez\u0151 k\u00f6r'}</button>
+  `;
+}
+
+function renderTrackerControls(){
+  const t = state.turn;
+  const timerWidget = state.trackerTimerEnabled ? `
+    <div id="timerWidget" style="margin-bottom:14px;">
+      <div id="timerDisplay" style="text-align:center; font-family: Impact, 'Arial Black', sans-serif; font-size:44px; letter-spacing:2px; color:var(--gold-soft); line-height:1;">${computeRemaining()}</div>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button onclick="trackerStartTimer()" id="timerStartBtn" style="margin:0;">\u00d3ra ind\u00edt\u00e1sa</button>
+        <button class="secondary" onclick="trackerResetTimer()" style="margin:0; width:auto; padding:12px 16px;">&#8635;</button>
+      </div>
+    </div>` : '';
+  if(state.phase === 'turn_start'){
+    const cell = TRACK[state.pos[t]];
+    if(cell.type === 'question'){
+      return timerWidget + `
+        <p class="hint">A b\u00e1but k\u00e9rd\u0151jel mez\u0151n \u00e1ll &ndash; mondjatok be el\u0151re egy sz\u00e1mot a t\u00e9ma felolvas\u00e1sa el\u0151tt:</p>
+        <input type="number" id="predictInput2" min="0" max="10" value="5">
+        <button onclick="trackerSubmitPredict()">Sz\u00e1m r\u00f6gz\u00edt\u00e9se</button>
+      `;
+    }
+    return timerWidget + `
+      <p class="hint">H\u00e1ny j\u00f3 v\u00e1laszt adott a csapat ebben a k\u00f6rben?</p>
+      <input type="number" id="scoreInput" min="0" max="10" value="0">
+      <button onclick="trackerSubmitNormal()">L\u00e9p\u00e9s r\u00f6gz\u00edt\u00e9se</button>
+    `;
+  }
+  if(state.phase === 'tracker_resolve'){
+    return timerWidget + `
+      <div class="hint">Bemondott sz\u00e1m: <b>${state.predicted}</b>. H\u00e1ny j\u00f3 v\u00e1laszt siker\u00fclt t\u00e9nylegesen adni?</div>
+      <input type="number" id="actualInput" min="0" max="10" value="${state.predicted}">
+      <button onclick="trackerSubmitResolve()">Ki\u00e9rt\u00e9kel\u00e9s</button>
+    `;
+  }
+  return timerWidget;
+}
+
+function renderWaitingScreen(msg){
+  return `
+    <div class="gate" style="border-color: rgba(240,185,61,0.4); background: rgba(240,185,61,0.06);">
+      <div class="big-warn" style="color:var(--gold-soft);">&#8987; V\u00e1rakoz\u00e1s\u2026</div>
+      <p class="hint" style="margin:0;">${msg}</p>
+    </div>
+  `;
+}
+
+function renderGameScreen(){
+  let controlsHtml = '';
+  const online = conn.mode === 'online' && conn.role;
+  if(!state.winner){
+    if(state.mode === 'full'){
+      const actorNeeded = ['turn_start','color_choice','predict'].includes(state.phase) ? state.turn
+                         : ['reveal','playing'].includes(state.phase) ? otherTeam(state.turn)
+                         : null;
+      const iCanAct = !online || !actorNeeded || conn.role === actorNeeded;
+
+      if(!iCanAct && (state.phase==='turn_start' || state.phase==='color_choice' || state.phase==='predict')){
+        controlsHtml = renderWaitingScreen(`A ${esc(teamName(state.turn))} csapat éppen kártyát húz / választ. Türelem!`);
+      } else if(!iCanAct && (state.phase==='reveal' || state.phase==='playing')){
+        const reader = otherTeam(state.turn);
+        controlsHtml = state.phase==='playing'
+          ? `<div id="timerWidget" style="margin-bottom:14px;">
+               <div id="timerDisplay" style="text-align:center; font-family: Impact, 'Arial Black', sans-serif; font-size:48px; letter-spacing:2px; color:var(--gold-soft); line-height:1;">${state.timerDuration}</div>
+             </div>` + renderWaitingScreen(`A ${esc(teamName(reader))} csapat olvassa fel nektek a témát élőszóban. Figyeljétek az időt, és mondjátok a válaszokat!`)
+          : renderWaitingScreen(`A ${esc(teamName(reader))} csapat mindjárt felolvassa nektek a témát élőszóban. Készüljetek!`);
+      } else {
+        if(state.phase==='turn_start') controlsHtml = renderTurnStartControls();
+        else if(state.phase==='color_choice') controlsHtml = renderColorChoice();
+        else if(state.phase==='predict') controlsHtml = renderPredict();
+        else if(state.phase==='reveal') controlsHtml = renderReveal();
+        else if(state.phase==='playing') controlsHtml = renderPlaying();
+      }
+      if(state.phase==='result') controlsHtml = renderResult(); // az eredményt mindkét eszköz látja
+    } else {
+      controlsHtml = renderTrackerControls();
+    }
+  }
+
+  const winBanner = state.winner ? `<div class="win-banner">${esc(teamName(state.winner))} csapat nyert! &#127942;</div>` : '';
+  const turnBanner = !state.winner ? `<div class="turn-banner ${state.turn}">${esc(teamName(state.turn))} csapat j\u00f6n</div>` : '';
+
+  return `
+  <div class="layout">
+    <div class="board-card">
+      <svg id="board" viewBox="0 0 600 600">${drawBoardSVG()}</svg>
+    </div>
+    <div>
+      ${online ? `<p class="hint" style="text-align:center; margin-top:-8px;">Szoba: <b>${conn.roomCode}</b> &middot; Ez az eszköz: <b>${esc(teamName(conn.role))}</b></p>` : ''}      ${winBanner}
+      <div class="panel" id="turnPanel" style="${state.winner?'display:none;':''}">
+        <h2>Aktu\u00e1lis k\u00f6r</h2>
+        ${turnBanner}
+        <div id="turnControls">${controlsHtml}</div>
+      </div>
+
+      <div class="panel">
+        <h2>Állás</h2>
+        <div class="team-row blue">
+          <div class="team-name"><span class="dot blue"></span>${esc(state.names.blue)}</div>
+          <div class="team-pos">${state.pos.blue} / ${TOTAL-1}</div>
+        </div>
+        <div class="team-row red">
+          <div class="team-name"><span class="dot red"></span>${esc(state.names.red)}</div>
+          <div class="team-pos">${state.pos.red} / ${TOTAL-1}</div>
+        </div>
+        <details style="margin-top:10px;">
+          <summary>Kézi korrekció</summary>
+          <div class="correction-row">
+            <button class="secondary" onclick="nudge('blue',-1)">&minus;</button>
+            <span>${esc(state.names.blue)} pozíció</span>
+            <button class="secondary" onclick="nudge('blue',1)">+</button>
+          </div>
+          <div class="correction-row">
+            <button class="secondary" onclick="nudge('red',-1)">&minus;</button>
+            <span>${esc(state.names.red)} pozíció</span>
+            <button class="secondary" onclick="nudge('red',1)">+</button>
+          </div>
+        </details>
+      </div>
+
+      <div class="panel">
+        <h2>Menet napló</h2>
+        <div class="log">${state.log.map(l=>`<div>${l}</div>`).join('')}</div>
+      </div>
+
+      <div class="panel">
+        <details>
+          <summary>Szabályok / jelmagyarázat</summary>
+          <div class="legend">
+            <div class="legend-item"><span class="legend-swatch" style="background:var(--purple)"></span>Sima mező (lila)</div>
+            <div class="legend-item"><span class="legend-swatch" style="background:var(--orange)"></span>Sima mező (narancs)</div>
+            <div class="legend-item"><span class="legend-swatch" style="background:var(--cream)"></span>Kérdőjel mező</div>
+            <div class="legend-item"><span class="legend-swatch" style="background:#2fb6c9"></span>Spirál mező</div>
+          </div>
+          <p style="margin-top:10px; line-height:1.5;">
+          <b>Sima mező:</b> a kör végén annyit lép a csapat, ahány jó választ adott.<br><br>
+          <b>Kérdőjel mező:</b> a bábu itt áll → előre be kell mondani egy számot. Ha teljesítik, pontosan annyit lépnek előre; ha nem, annyit lépnek vissza.<br><br>
+          <b>Spirál mező:</b> pontos ráérkezéskor megismétlődik a lépés (kikapcsolható).<br><br>
+          Aki eléri vagy túllépi a célt, nyer.
+          </p>
+        </details>
+      </div>
+
+      <button class="secondary" onclick="exitToMenu()">&#9664; Vissza a menübe / Új játék</button>
+    </div>
+  </div>`;
+}
+
+function render(){
+  const root = document.getElementById('root');
+  const navBar = document.getElementById('navBar');
+  if(navBar) navBar.style.display = (state.screen === 'setup') ? 'block' : 'none';
+  document.getElementById('subtitle').textContent = state.screen === 'connect'
+    ? 'Digitális kártyahúzó, pálya-követő és pontozó'
+    : state.screen === 'joining'
+      ? 'Csatlakozás szobához\u2026'
+      : state.screen === 'setup'
+        ? (conn.mode === 'online' ? `Két eszközös mód \u2014 szoba: ${conn.roomCode}` : 'Egy eszközös mód')
+        : (state.mode === 'full' ? 'Teljes játék mód' : 'Pálya-követő mód');
+  if(state.screen === 'connect'){
+    root.innerHTML = renderConnectScreen();
+  } else if(state.screen === 'joining'){
+    root.innerHTML = renderJoiningScreen();
+  } else if(state.screen === 'setup'){
+    root.innerHTML = renderSetupScreen();
+  } else {
+    root.innerHTML = renderGameScreen();
+    if(state.mode === 'full' && state.phase !== 'playing' && timerInterval) stopTimer();
+    if(state.mode === 'full' && state.phase === 'playing') updateTimerDisplay();
+    if(state.mode === 'tracker' && state.trackerTimerEnabled) updateTimerDisplay();
+  }
+}
+
+/* =========================================================
+   INDÍTÁS
+   ========================================================= */
+state = freshState();
+render();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
